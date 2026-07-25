@@ -43,9 +43,14 @@ interface Comic {
   published_chapters?: Chapter[];
 }
 
-defineProps<{
+const props = withDefaults(defineProps<{
   comic: Comic;
-}>();
+  unlockedChapterIds?: number[];
+  cartChapterIds?: number[];
+}>(), {
+  unlockedChapterIds: () => [],
+  cartChapterIds: () => [],
+});
 
 const page = usePage();
 const flashError = computed(() => (page.props as any).flash?.error);
@@ -53,10 +58,23 @@ const flashError = computed(() => (page.props as any).flash?.error);
 const isAdding = ref<number | null>(null);
 const successMessage = ref('');
 
+const isUnlocked = (chapterId: number, isFree: boolean) => {
+  return isFree || (props.unlockedChapterIds && props.unlockedChapterIds.includes(chapterId));
+};
+
+const isInCart = (chapterId: number) => {
+  return props.cartChapterIds && props.cartChapterIds.includes(chapterId);
+};
+
 const handleAddToCart = async (chapterId: number) => {
   const user = (page.props.auth as any)?.user;
   if (!user) {
     router.get('/login');
+    return;
+  }
+
+  if (isInCart(chapterId)) {
+    router.get('/cart');
     return;
   }
 
@@ -67,7 +85,7 @@ const handleAddToCart = async (chapterId: number) => {
     const res = await axios.post('/api/cart/items', { chapter_id: chapterId });
     if (res.data && res.data.success) {
       successMessage.value = res.data.message || 'Bab berhasil ditambahkan ke keranjang!';
-      router.reload({ only: ['cartCount'] });
+      router.reload({ only: ['cartCount', 'cartChapterIds'] });
       setTimeout(() => {
         successMessage.value = '';
       }, 4000);
@@ -182,12 +200,23 @@ const handleAddToCart = async (chapterId: number) => {
             </div>
 
             <div class="flex items-center gap-3">
+              <!-- Free Chapter Status -->
               <span
                 v-if="ch.is_free"
                 class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
               >
                 FREE
               </span>
+
+              <!-- Purchased / Unlocked Status -->
+              <span
+                v-else-if="isUnlocked(ch.id, ch.is_free)"
+                class="px-2.5 py-1 text-xs font-bold rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20"
+              >
+                UNLOCKED ✓
+              </span>
+
+              <!-- Paid Price Label -->
               <span
                 v-else
                 class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20"
@@ -195,16 +224,29 @@ const handleAddToCart = async (chapterId: number) => {
                 Rp {{ ch.price ? ch.price.toLocaleString() : '5,000' }}
               </span>
 
-              <!-- Add to Cart Button for Paid Chapters -->
-              <button
-                v-if="!ch.is_free"
-                @click="handleAddToCart(ch.id)"
-                :disabled="isAdding === ch.id"
-                class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition flex items-center gap-1.5"
-              >
-                <span>🛒</span>
-                <span>{{ isAdding === ch.id ? 'Adding...' : 'Add to Cart' }}</span>
-              </button>
+              <!-- Cart Button (Shown ONLY if paid AND NOT unlocked) -->
+              <template v-if="!isUnlocked(ch.id, ch.is_free)">
+                <!-- Already In Cart Button -->
+                <Link
+                  v-if="isInCart(ch.id)"
+                  href="/cart"
+                  class="px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 transition flex items-center gap-1.5"
+                >
+                  <span>🛒</span>
+                  <span>In Cart</span>
+                </Link>
+
+                <!-- Add to Cart Button -->
+                <button
+                  v-else
+                  @click="handleAddToCart(ch.id)"
+                  :disabled="isAdding === ch.id"
+                  class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition flex items-center gap-1.5"
+                >
+                  <span>🛒</span>
+                  <span>{{ isAdding === ch.id ? 'Adding...' : 'Add to Cart' }}</span>
+                </button>
+              </template>
 
               <!-- Read Chapter Button -->
               <Link
