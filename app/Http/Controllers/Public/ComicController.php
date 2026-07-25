@@ -41,6 +41,8 @@ class ComicController extends Controller
         $user = $request->user();
         $unlockedChapterIds = [];
         $cartChapterIds = [];
+        $isBookmarked = false;
+        $userRating = 0;
 
         if ($user) {
             if (Schema::hasTable('entitlements')) {
@@ -55,12 +57,32 @@ class ComicController extends Controller
             if ($cart) {
                 $cartChapterIds = $cart->items()->pluck('chapter_id')->toArray();
             }
+
+            if (Schema::hasTable('bookmarks')) {
+                $isBookmarked = DB::table('bookmarks')
+                    ->where('user_id', $user->id)
+                    ->where('comic_id', $comic->id)
+                    ->exists();
+            }
+
+            if (Schema::hasTable('ratings')) {
+                $ratingRecord = DB::table('ratings')
+                    ->where('user_id', $user->id)
+                    ->where('comic_id', $comic->id)
+                    ->first();
+
+                if ($ratingRecord) {
+                    $userRating = (int) $ratingRecord->rating;
+                }
+            }
         }
 
         return Inertia::render('Public/Comics/Show', [
             'comic' => $comic,
             'unlockedChapterIds' => $unlockedChapterIds,
             'cartChapterIds' => $cartChapterIds,
+            'isBookmarked' => $isBookmarked,
+            'userRating' => $userRating,
         ]);
     }
 }

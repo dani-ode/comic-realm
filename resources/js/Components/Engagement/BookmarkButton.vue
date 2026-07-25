@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import axios from 'axios';
 
 const props = defineProps<{
@@ -9,6 +9,10 @@ const props = defineProps<{
 
 const isBookmarked = ref(props.initialBookmarked || false);
 const isLoading = ref(false);
+
+watch(() => props.initialBookmarked, (val) => {
+  isBookmarked.value = !!val;
+});
 
 const toggleBookmark = async () => {
   isLoading.value = true;

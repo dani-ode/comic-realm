@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import axios from 'axios';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import GenreBadge from '@/Components/Comic/GenreBadge.vue';
 import BookmarkButton from '@/Components/Engagement/BookmarkButton.vue';
@@ -46,9 +47,13 @@ const props = withDefaults(defineProps<{
   comic: Comic;
   unlockedChapterIds?: number[];
   cartChapterIds?: number[];
+  isBookmarked?: boolean;
+  userRating?: number;
 }>(), {
   unlockedChapterIds: () => [],
   cartChapterIds: () => [],
+  isBookmarked: false,
+  userRating: 0,
 });
 
 const page = usePage();
@@ -56,6 +61,7 @@ const flashError = computed(() => (page.props as any).flash?.error);
 const flashSuccess = computed(() => (page.props as any).flash?.success);
 
 const isAdding = ref<number | null>(null);
+const localSuccess = ref('');
 
 const isUnlocked = (chapterId: number, isFree: boolean) => {
   return isFree || (props.unlockedChapterIds && props.unlockedChapterIds.includes(chapterId));
@@ -65,7 +71,7 @@ const isInCart = (chapterId: number) => {
   return props.cartChapterIds && props.cartChapterIds.includes(chapterId);
 };
 
-const handleAddToCart = (chapterId: number) => {
+const handleAddToCart = async (chapterId: number) => {
   const user = (page.props.auth as any)?.user;
   if (!user) {
     router.get('/login');
@@ -78,13 +84,29 @@ const handleAddToCart = (chapterId: number) => {
   }
 
   isAdding.value = chapterId;
+  localSuccess.value = '';
 
-  router.post('/cart/add', { chapter_id: chapterId }, {
-    preserveScroll: true,
-    onFinish: () => {
-      isAdding.value = null;
-    },
-  });
+  try {
+    const res = await axios.post('/api/cart/items', { chapter_id: chapterId });
+    if (res.data && res.data.success) {
+      if (!props.cartChapterIds.includes(chapterId)) {
+        props.cartChapterIds.push(chapterId);
+      }
+      localSuccess.value = res.data.message || 'Bab berhasil ditambahkan ke keranjang belanja.';
+      router.reload({ only: ['cartCount', 'cartChapterIds'] });
+      setTimeout(() => {
+        localSuccess.value = '';
+      }, 5000);
+    }
+  } catch (err: any) {
+    if (err.response && err.response.status === 401) {
+      router.get('/login');
+    } else {
+      alert(err.response?.data?.message || 'Gagal menambahkan bab ke keranjang belanja.');
+    }
+  } finally {
+    isAdding.value = null;
+  }
 };
 </script>
 
@@ -128,7 +150,7 @@ const handleAddToCart = (chapterId: number) => {
           <div class="flex flex-wrap items-center gap-6 py-3 border-y border-slate-800 text-sm">
             <div class="flex items-center gap-2">
               <span class="font-bold text-amber-400 text-base">⭐ {{ comic.rating_average ? comic.rating_average.toFixed(1) : '0.0' }}</span>
-              <StarRating :comicId="comic.id" />
+              <StarRating :comicId="comic.id" :initialRating="userRating" />
             </div>
             <div class="text-slate-400">
               👁 {{ comic.total_views ? comic.total_views.toLocaleString() : 0 }} Views
@@ -137,7 +159,7 @@ const handleAddToCart = (chapterId: number) => {
               ❤️ {{ comic.total_bookmarks ? comic.total_bookmarks.toLocaleString() : 0 }} Bookmarks
             </div>
             <div>
-              <BookmarkButton :comicId="comic.id" />
+              <BookmarkButton :comicId="comic.id" :initialBookmarked="isBookmarked" />
             </div>
           </div>
 
@@ -157,10 +179,10 @@ const handleAddToCart = (chapterId: number) => {
         {{ flashError }}
       </div>
 
-      <!-- Flash Success Banner -->
-      <div v-if="flashSuccess" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-5 py-3.5 rounded-xl text-sm font-medium flex items-center justify-between">
+      <!-- Success Notification Banner -->
+      <div v-if="flashSuccess || localSuccess" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-5 py-3.5 rounded-xl text-sm font-medium flex items-center justify-between">
         <span class="flex items-center gap-2">
-          <span>🛒</span> {{ flashSuccess }}
+          <span>🛒</span> {{ flashSuccess || localSuccess }}
         </span>
         <Link href="/cart" class="text-xs font-bold underline hover:text-white">Lihat Keranjang →</Link>
       </div>

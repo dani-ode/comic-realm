@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import axios from 'axios';
 
 const props = defineProps<{
@@ -11,6 +11,10 @@ const props = defineProps<{
 const rating = ref(props.initialRating || 0);
 const hoverRating = ref(0);
 const isLoading = ref(false);
+
+watch(() => props.initialRating, (val) => {
+  rating.value = val || 0;
+});
 
 const setRating = async (val: number) => {
   if (props.readOnly) return;
