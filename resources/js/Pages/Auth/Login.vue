@@ -34,6 +34,7 @@ const submit = () => {
       console.error('[Login.vue] Request returned errors:', errors);
       const msg = errors.login || errors.password || Object.values(errors)[0] || 'Email/Username atau password yang Anda masukkan tidak sesuai.';
       errorMessage.value = msg;
+      alert('⚠️ Sign In Failed:\n' + msg);
     },
     onFinish: () => {
       console.log('[Login.vue] Request finished.');
