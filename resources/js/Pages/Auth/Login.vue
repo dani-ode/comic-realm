@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { Head, useForm, Link } from '@inertiajs/vue3';
+import { Head, useForm, Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+
+const page = usePage();
+const flashError = computed(() => (page.props as any).flash?.error);
 
 const form = useForm({
   login: '',
@@ -29,8 +33,21 @@ const submit = () => {
       </p>
     </div>
 
-    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-      <div class="bg-slate-900 border border-slate-800 py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10">
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md space-y-4">
+      <div class="bg-slate-900 border border-slate-800 py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 space-y-6">
+        <!-- Error Banner -->
+        <div
+          v-if="form.errors.login || form.errors.password || flashError"
+          class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-medium space-y-1"
+        >
+          <div class="flex items-center gap-2 font-bold text-sm">
+            <span>⚠️</span> Sign In Failed
+          </div>
+          <p v-if="form.errors.login">{{ form.errors.login }}</p>
+          <p v-if="form.errors.password">{{ form.errors.password }}</p>
+          <p v-if="flashError">{{ flashError }}</p>
+        </div>
+
         <form class="space-y-5" @submit.prevent="submit">
           <div>
             <label class="block text-sm font-medium text-slate-300">Email or Username</label>
@@ -78,6 +95,18 @@ const submit = () => {
             </button>
           </div>
         </form>
+
+        <!-- Demo Accounts Hint -->
+        <div class="pt-4 border-t border-slate-800/80 space-y-1.5 text-xs text-slate-400">
+          <p class="font-bold text-slate-300 flex items-center gap-1.5">
+            <span>🔑</span> Demo Accounts (Password: <code class="text-sky-400">password123</code>)
+          </p>
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-1 font-mono text-[11px]">
+            <p>• Reader: <span class="text-sky-400">user@comicrealm.test</span></p>
+            <p>• Publisher: <span class="text-sky-400">publisher@comicrealm.test</span></p>
+            <p>• Admin: <span class="text-sky-400">admin@comicrealm.test</span></p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
