@@ -5,6 +5,7 @@ namespace App\Domain\Reading\Services;
 use App\Domain\Comic\Models\Chapter;
 use App\Domain\User\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ReaderAccessService
 {
@@ -25,11 +26,15 @@ class ReaderAccessService
             return true;
         }
 
-        // 4. Periksa apakah pengguna memiliki Entitlement hak baca aktif
-        return DB::table('entitlements')
-            ->where('user_id', $user->id)
-            ->where('chapter_id', $chapter->id)
-            ->whereNull('revoked_at')
-            ->exists();
+        // 4. Periksa apakah pengguna memiliki Entitlement hak baca aktif (jika tabel entitlements tersedia)
+        if (Schema::hasTable('entitlements')) {
+            return DB::table('entitlements')
+                ->where('user_id', $user->id)
+                ->where('chapter_id', $chapter->id)
+                ->whereNull('revoked_at')
+                ->exists();
+        }
+
+        return false;
     }
 }
