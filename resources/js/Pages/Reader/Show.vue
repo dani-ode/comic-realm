@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import axios from 'axios';
 import ReaderToolbar from '@/Components/Reader/ReaderToolbar.vue';
 import ReaderPageItem from '@/Components/Reader/ReaderPageItem.vue';
@@ -43,6 +43,9 @@ const props = defineProps<{
   allChapters?: ChapterOption[];
   savedProgress?: { page_number: number; progress_percent: number } | null;
 }>();
+
+const page = usePage();
+const isAuthenticated = computed(() => !!(page.props as any).auth?.user);
 
 const currentPage = ref(1);
 const progressPercent = ref(0);
@@ -108,6 +111,7 @@ const debounceSaveProgress = () => {
 };
 
 const saveProgress = async () => {
+  if (!isAuthenticated.value) return;
   try {
     await axios.post('/api/reader/progress', {
       comic_id: props.comic.id,

@@ -15,7 +15,7 @@ class HomeController extends Controller
         return Inertia::render('Public/Home', [
             'featuredComics' => $comicQuery->getFeaturedComics(),
             'popularComics' => $comicQuery->getPopularComics(),
-            'latestUpdates' => $comicQuery->getLatestUpdates(),
+            'latestComics' => $comicQuery->getLatestUpdates(),
             'genres' => Genre::where('is_active', true)->get(['id', 'name', 'slug']),
         ]);
     }
