@@ -28,7 +28,7 @@ it('redirects guest users when trying to access paid chapter', function () {
 
     $response = $this->get("/read/{$comic->slug}/3");
 
-    $response->assertRedirect(route('comics.show', $comic->slug));
+    $response->assertRedirect(route('login'));
 });
 
 it('allows authenticated users to save reading progress', function () {

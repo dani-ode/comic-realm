@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import GenreBadge from '@/Components/Comic/GenreBadge.vue';
 import BookmarkButton from '@/Components/Engagement/BookmarkButton.vue';
 import StarRating from '@/Components/Engagement/StarRating.vue';
@@ -43,6 +44,9 @@ interface Comic {
 defineProps<{
   comic: Comic;
 }>();
+
+const page = usePage();
+const flashError = computed(() => (page.props as any).flash?.error);
 </script>
 
 <template>
@@ -126,6 +130,12 @@ defineProps<{
 
     <!-- Chapter List & Discussion Section -->
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-10 w-full flex-1 space-y-12">
+      <!-- Flash Error Banner -->
+      <div v-if="flashError" class="bg-red-500/10 border border-red-500/30 text-red-400 px-5 py-3.5 rounded-xl text-sm font-medium flex items-center gap-3">
+        <span class="text-lg">⚠️</span>
+        {{ flashError }}
+      </div>
+
       <!-- Chapter List -->
       <section class="space-y-6">
         <h2 class="text-2xl font-bold text-white flex items-center justify-between">

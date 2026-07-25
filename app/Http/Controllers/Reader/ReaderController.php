@@ -34,6 +34,12 @@ class ReaderController extends Controller
 
         // 1. Pengecekan Hak Akses Membaca
         if (! $accessService->canRead($user, $chapter)) {
+            // Guest user → redirect to login with intended URL
+            if (! $user) {
+                return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu untuk membaca bab berbayar.');
+            }
+
+            // Logged-in user without entitlement → redirect to comic detail with flash
             return redirect()->route('comics.show', $comic->slug)->with('error', 'Silakan beli bab ini terlebih dahulu untuk membaca.');
         }
 
