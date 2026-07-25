@@ -117,7 +117,7 @@ onUnmounted(() => {
                 @click="handleLogout"
                 class="w-full text-left flex items-center gap-2 px-4 py-2 text-rose-400 hover:bg-rose-500/10 transition"
               >
-                <span>🚪</span>
+                <span>MSO 🚪</span>
                 <span>Logout</span>
               </button>
             </div>
@@ -126,8 +126,8 @@ onUnmounted(() => {
 
         <!-- Guest Links -->
         <div v-else class="flex items-center gap-2">
-          <Link href="/login" class="text-xs font-semibold px-3 py-1.5 text-slate-300 hover:text-white">Sign In</Link>
-          <Link href="/register" class="text-xs font-bold px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white transition">Register</Link>
+          <Link href="/login" class="text-xs font-semibold px-3 py-1.5 text-slate-300 hover:text-white">Masuk / Sign In [UPDATED]</Link>
+          <Link href="/register" class="text-xs font-bold px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white transition">Daftar / Register [UPDATED]</Link>
         </div>
       </div>
     </header>
