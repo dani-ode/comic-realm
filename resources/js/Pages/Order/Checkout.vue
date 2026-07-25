@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import axios from 'axios';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 
 interface CartItem {
   id: number;
@@ -56,19 +57,7 @@ const submitOrder = async () => {
 <template>
   <Head title="Checkout Order - The ComicRealm" />
 
-  <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-    <!-- Navbar Header -->
-    <header class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 flex items-center justify-between">
-      <Link href="/" class="text-xl font-extrabold bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-        The ComicRealm
-      </Link>
-
-      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
-        <Link href="/cart" class="text-slate-300 hover:text-white transition">← Back to Cart</Link>
-        <span class="text-sky-400 font-bold">Checkout</span>
-      </nav>
-    </header>
-
+  <PublicLayout>
     <main class="max-w-4xl mx-auto px-4 lg:px-8 py-10 w-full flex-1 space-y-8">
       <div>
         <h1 class="text-3xl font-extrabold text-white">Checkout Summary</h1>
@@ -121,5 +110,5 @@ const submitOrder = async () => {
         </div>
       </div>
     </main>
-  </div>
+  </PublicLayout>
 </template>

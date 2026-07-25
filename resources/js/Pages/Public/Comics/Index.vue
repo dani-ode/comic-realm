@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 import ComicCard from '@/Components/Comic/ComicCard.vue';
 
 interface Genre {
@@ -55,28 +56,7 @@ watch([selectedGenre, selectedStatus, selectedSort], () => {
 <template>
   <Head title="Comic Catalog" />
 
-  <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-    <!-- Navbar Header -->
-    <header class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 flex items-center justify-between">
-      <Link href="/" class="text-xl font-extrabold bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-        The ComicRealm
-      </Link>
-
-      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
-        <Link href="/" class="text-slate-300 hover:text-white transition">Home</Link>
-        <Link href="/comics" class="text-sky-400">Catalog</Link>
-      </nav>
-
-      <div class="flex items-center gap-3">
-        <Link href="/login" class="text-sm font-medium px-4 py-2 rounded-xl text-slate-300 hover:text-white transition">
-          Sign In
-        </Link>
-        <Link href="/register" class="text-sm font-semibold px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white transition">
-          Get Started
-        </Link>
-      </div>
-    </header>
-
+  <PublicLayout>
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-10 w-full flex-1 space-y-8">
       <div>
         <h1 class="text-3xl font-extrabold text-white">Comic Catalog</h1>
@@ -159,5 +139,5 @@ watch([selectedGenre, selectedStatus, selectedSort], () => {
         />
       </div>
     </main>
-  </div>
+  </PublicLayout>
 </template>

@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import axios from 'axios';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 
 interface Channel {
   code: string;
@@ -58,20 +59,7 @@ const processPayment = async () => {
 <template>
   <Head title="Select Payment Method - TriPay Gateway" />
 
-  <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-    <!-- Navbar Header -->
-    <header class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 flex items-center justify-between">
-      <Link href="/" class="text-xl font-extrabold bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-        The ComicRealm
-      </Link>
-
-      <div class="flex items-center gap-3">
-        <Link :href="`/orders/${order.order_number}`" class="text-xs font-semibold px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300">
-          ← Back to Invoice
-        </Link>
-      </div>
-    </header>
-
+  <PublicLayout>
     <main class="max-w-4xl mx-auto px-4 lg:px-8 py-10 w-full flex-1 space-y-8">
       <div>
         <span class="text-xs text-sky-400 font-semibold tracking-wider uppercase">TriPay Gateway</span>
@@ -131,5 +119,5 @@ const processPayment = async () => {
         No payment channels available at the moment.
       </div>
     </main>
-  </div>
+  </PublicLayout>
 </template>

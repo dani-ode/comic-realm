@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 import GenreBadge from '@/Components/Comic/GenreBadge.vue';
 import BookmarkButton from '@/Components/Engagement/BookmarkButton.vue';
 import StarRating from '@/Components/Engagement/StarRating.vue';
@@ -52,25 +53,7 @@ const flashError = computed(() => (page.props as any).flash?.error);
 <template>
   <Head :title="`${comic.title} - Read Webcomic`" />
 
-  <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-    <!-- Navbar Header -->
-    <header class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 flex items-center justify-between">
-      <Link href="/" class="text-xl font-extrabold bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-        The ComicRealm
-      </Link>
-
-      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
-        <Link href="/" class="text-slate-300 hover:text-white transition">Home</Link>
-        <Link href="/comics" class="text-slate-300 hover:text-white transition">Catalog</Link>
-      </nav>
-
-      <div class="flex items-center gap-3">
-        <Link href="/login" class="text-sm font-medium px-4 py-2 rounded-xl text-slate-300 hover:text-white transition">
-          Sign In
-        </Link>
-      </div>
-    </header>
-
+  <PublicLayout>
     <!-- Comic Banner & Header Section -->
     <div class="relative w-full bg-slate-900 border-b border-slate-800">
       <div v-if="comic.banner_image" class="absolute inset-0 opacity-20 overflow-hidden">
@@ -194,5 +177,5 @@ const flashError = computed(() => (page.props as any).flash?.error);
         <CommentSection :comicId="comic.id" />
       </section>
     </main>
-  </div>
+  </PublicLayout>
 </template>
