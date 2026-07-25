@@ -7,6 +7,14 @@ use App\Domain\User\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
+it('redirects user without studio from dashboard to apply page', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get('/publisher/dashboard');
+
+    $response->assertRedirect(route('publisher.apply'));
+});
+
 it('allows regular user to apply for publisher role and redirects if already applied', function () {
     $user = User::factory()->create();
 
@@ -101,4 +109,31 @@ it('blocks unapproved studio from creating new comics', function () {
 
     $response->assertRedirect(route('publisher.dashboard'));
     $this->assertDatabaseMissing('comics', ['title' => 'Unapproved Comic']);
+});
+
+it('allows rejected publisher to edit and resubmit studio profile details', function () {
+    $user = User::factory()->create();
+
+    $profile = PublisherProfile::create([
+        'user_id' => $user->id,
+        'brand_name' => 'Rejected Studio',
+        'slug' => 'rejected-studio',
+        'verification_status' => 'rejected',
+        'rejection_reason' => 'Nama studio kurang jelas.',
+    ]);
+
+    $response = $this->actingAs($user)->post('/publisher/profile/update', [
+        'brand_name' => 'Updated Studio Realm',
+        'bio' => 'Bio baru yang sudah diperbaiki.',
+        'bank_name' => 'BCA',
+        'bank_account_number' => '999888777',
+        'bank_account_name' => 'Mahdani Studio',
+    ]);
+
+    $response->assertRedirect(route('publisher.dashboard'));
+
+    expect($profile->fresh())
+        ->brand_name->toBe('Updated Studio Realm')
+        ->verification_status->value->toBe('pending')
+        ->rejection_reason->toBeNull();
 });

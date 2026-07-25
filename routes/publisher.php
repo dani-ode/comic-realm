@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth')->group(function () {
     Route::get('/publisher/apply', [PublisherApplicationController::class, 'create'])->name('publisher.apply');
     Route::post('/publisher/apply', [PublisherApplicationController::class, 'store']);
+    Route::post('/publisher/profile/update', [PublisherApplicationController::class, 'update'])->name('publisher.profile.update');
 
     Route::middleware('auth')->group(function () {
         Route::get('/publisher/dashboard', [PublisherComicController::class, 'dashboard'])->name('publisher.dashboard');

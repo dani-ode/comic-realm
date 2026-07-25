@@ -14,11 +14,16 @@ use Inertia\Response as InertiaResponse;
 
 class PublisherComicController extends Controller
 {
-    public function dashboard(Request $request): InertiaResponse
+    public function dashboard(Request $request): InertiaResponse|RedirectResponse
     {
         $user = $request->user();
 
         $profile = PublisherProfile::where('user_id', $user->id)->first();
+
+        // Jika belum mengajukan studio sama sekali, arahkan otomatis ke /publisher/apply
+        if (! $profile) {
+            return redirect()->route('publisher.apply');
+        }
 
         $comics = Comic::with(['genres', 'chapters'])
             ->where('publisher_id', $user->id)

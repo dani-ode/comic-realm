@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 interface Chapter {
@@ -25,6 +25,10 @@ interface Comic {
 interface Profile {
   id: number;
   brand_name: string;
+  bio?: string;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_account_name?: string;
   verification_status: string;
   rejection_reason?: string;
 }
@@ -39,6 +43,26 @@ const flashError = computed(() => (page.props as any).flash?.error);
 const flashSuccess = computed(() => (page.props as any).flash?.success);
 
 const isApproved = computed(() => props.profile && props.profile.verification_status === 'approved');
+const isRejected = computed(() => props.profile && props.profile.verification_status === 'rejected');
+const isPending = computed(() => props.profile && props.profile.verification_status === 'pending');
+
+const showEditForm = ref(isRejected.value);
+
+const form = useForm({
+  brand_name: props.profile?.brand_name || '',
+  bio: props.profile?.bio || '',
+  bank_name: props.profile?.bank_name || 'BCA',
+  bank_account_number: props.profile?.bank_account_number || '',
+  bank_account_name: props.profile?.bank_account_name || '',
+});
+
+const submitProfileUpdate = () => {
+  form.post('/publisher/profile/update', {
+    onSuccess: () => {
+      showEditForm.value = false;
+    },
+  });
+};
 </script>
 
 <template>
@@ -55,34 +79,139 @@ const isApproved = computed(() => props.profile && props.profile.verification_st
       </div>
 
       <!-- Studio Verification Status Alert Banner -->
-      <div v-if="!isApproved" class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 space-y-3">
-        <div class="flex items-center gap-3">
-          <span class="text-2xl">⏳</span>
-          <div>
-            <h2 class="text-lg font-bold text-amber-400">
-              <template v-if="profile && profile.verification_status === 'pending'">
-                Studio "{{ profile.brand_name }}" Dalam Menunggu Persetujuan Admin
-              </template>
-              <template v-else-if="profile && profile.verification_status === 'rejected'">
-                Pengajuan Studio Ditolak
-              </template>
-              <template v-else>
-                Belum Memiliki Akun Studio Publisher
-              </template>
-            </h2>
-            <p class="text-xs text-slate-300 mt-1">
-              <template v-if="profile && profile.verification_status === 'pending'">
-                Pengajuan studio Anda sedang ditinjau oleh Super Admin. Anda belum dapat membuat komik atau mengunggah bab baru sebelum akun disetujui.
-              </template>
-              <template v-else-if="profile && profile.verification_status === 'rejected'">
-                Alasan penolakan: {{ profile.rejection_reason || 'Tidak memenuhi kualifikasi platform.' }}
-              </template>
-              <template v-else>
-                Silakan daftarkan studio kreator Anda terlebih dahulu untuk mempublikasikan webcomic.
-              </template>
-            </p>
+      <div v-if="!isApproved" class="rounded-2xl p-6 space-y-4 shadow-xl" :class="isRejected ? 'bg-rose-500/10 border border-rose-500/30' : 'bg-amber-500/10 border border-amber-500/30'">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span class="text-3xl">{{ isRejected ? '❌' : '⏳' }}</span>
+            <div>
+              <h2 class="text-lg font-bold" :class="isRejected ? 'text-rose-400' : 'text-amber-400'">
+                <template v-if="isPending">
+                  Studio "{{ profile?.brand_name }}" Dalam Menunggu Persetujuan Admin
+                </template>
+                <template v-else-if="isRejected">
+                  Pengajuan Studio Ditolak
+                </template>
+              </h2>
+              <p class="text-xs text-slate-300 mt-1">
+                <template v-if="isPending">
+                  Pengajuan studio Anda sedang ditinjau oleh Super Admin. Anda belum dapat membuat komik atau mengunggah bab baru sebelum akun disetujui.
+                </template>
+                <template v-else-if="isRejected">
+                  Alasan penolakan: <strong class="text-rose-300">{{ profile?.rejection_reason || 'Tidak memenuhi kualifikasi platform.' }}</strong>. Silakan perbaiki data studio di bawah.
+                </template>
+              </p>
+            </div>
           </div>
+
+          <button
+            @click="showEditForm = !showEditForm"
+            class="px-4 py-2.5 rounded-xl text-xs font-bold text-white transition shrink-0"
+            :class="isRejected ? 'bg-rose-600 hover:bg-rose-500 shadow-lg shadow-rose-600/30' : 'bg-slate-800 border border-slate-700 hover:text-white'"
+          >
+            {{ showEditForm ? 'Tutup Form' : (isRejected ? '✏️ Perbaiki & Kirim Ulang Studio' : '⚙️ Ajukan Perubahan Studio') }}
+          </button>
         </div>
+      </div>
+
+      <!-- Status Header & Approved Change Button -->
+      <div v-else class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-2xl p-4 px-6">
+        <div class="flex items-center gap-3">
+          <span class="text-emerald-400 font-extrabold text-sm">✓ Studio Verified</span>
+          <span class="text-slate-400 text-xs">• {{ profile?.brand_name }}</span>
+        </div>
+        <button
+          @click="showEditForm = !showEditForm"
+          class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition"
+        >
+          ⚙️ Ajukan Perubahan Studio
+        </button>
+      </div>
+
+      <!-- Studio Edit & Re-submit Form Card -->
+      <div v-if="showEditForm" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-2xl">
+        <h2 class="text-lg font-bold text-white border-b border-slate-800 pb-3 flex items-center justify-between">
+          <span>⚙️ Form Edit & Pengajuan Studio</span>
+          <span class="text-xs font-normal text-slate-400">Verifikasi Ulang Admin</span>
+        </h2>
+
+        <form @submit.prevent="submitProfileUpdate" class="space-y-4">
+          <div class="space-y-1">
+            <label class="block text-xs font-semibold text-slate-300">Nama Brand / Studio *</label>
+            <input
+              v-model="form.brand_name"
+              type="text"
+              required
+              placeholder="Contoh: Studio Realm Art"
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+            />
+            <span v-if="form.errors.brand_name" class="text-xs text-rose-400">{{ form.errors.brand_name }}</span>
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-xs font-semibold text-slate-300">Deskripsi / Bio Studio</label>
+            <textarea
+              v-model="form.bio"
+              rows="3"
+              placeholder="Jelaskan jenis karya komik atau latar belakang studio Anda..."
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+            ></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="space-y-1">
+              <label class="block text-xs font-semibold text-slate-300">Nama Bank *</label>
+              <select
+                v-model="form.bank_name"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
+              >
+                <option value="BCA">BCA</option>
+                <option value="Mandiri">Mandiri</option>
+                <option value="BNI">BNI</option>
+                <option value="BRI">BRI</option>
+                <option value="CIMB">CIMB Niaga</option>
+              </select>
+            </div>
+
+            <div class="space-y-1">
+              <label class="block text-xs font-semibold text-slate-300">Nomor Rekening *</label>
+              <input
+                v-model="form.bank_account_number"
+                type="text"
+                required
+                placeholder="1234567890"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+              />
+            </div>
+
+            <div class="space-y-1">
+              <label class="block text-xs font-semibold text-slate-300">Atas Nama Rekening *</label>
+              <input
+                v-model="form.bank_account_name"
+                type="text"
+                required
+                placeholder="Nama Pemilik Rekening"
+                class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+              />
+            </div>
+          </div>
+
+          <div class="pt-2 flex justify-end gap-3">
+            <button
+              type="button"
+              @click="showEditForm = false"
+              class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              :disabled="form.processing"
+              class="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-sky-600 hover:bg-sky-500 disabled:opacity-50 transition shadow-lg shadow-sky-600/30"
+            >
+              {{ form.processing ? 'Menyimpan Perubahan...' : 'Kirim Ulang Verifikasi Studio →' }}
+            </button>
+          </div>
+        </form>
       </div>
 
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
