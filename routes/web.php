@@ -11,3 +11,4 @@ require __DIR__.'/order.php';
 require __DIR__.'/payment.php';
 require __DIR__.'/entitlement.php';
 require __DIR__.'/publisher.php';
+require __DIR__.'/wallet.php';
