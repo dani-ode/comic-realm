@@ -10,3 +10,4 @@ require __DIR__.'/cart.php';
 require __DIR__.'/order.php';
 require __DIR__.'/payment.php';
 require __DIR__.'/entitlement.php';
+require __DIR__.'/publisher.php';
