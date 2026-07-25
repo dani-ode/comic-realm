@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -40,9 +41,9 @@ class LoginController extends Controller
                 'login_input' => $credentials['login'],
             ]);
 
-            return redirect()->back()
-                ->withErrors(['login' => 'Email/Username atau password yang Anda masukkan tidak sesuai.'])
-                ->with('error', 'Email/Username atau password yang Anda masukkan tidak sesuai.');
+            throw ValidationException::withMessages([
+                'login' => 'Email/Username atau password yang Anda masukkan tidak sesuai.',
+            ]);
         }
 
         $request->session()->regenerate();
