@@ -27,13 +27,15 @@ class ComicSeeder extends Seeder
 
         $genres = Genre::all();
 
+        $pexelsImage = 'https://images.pexels.com/photos/27638736/pexels-photo-27638736.jpeg?auto=compress&cs=tinysrgb&w=800';
+
         $comicsData = [
             [
                 'title' => 'Solo Hunter: The Awakening',
                 'slug' => 'solo-hunter-the-awakening',
                 'description' => 'In a world invaded by dimensional dungeons, a lowest-rank hunter accidentally obtains a hidden leveling system.',
-                'cover_image' => 'https://picsum.photos/id/1025/400/600',
-                'banner_image' => 'https://picsum.photos/id/1025/1200/400',
+                'cover_image' => $pexelsImage,
+                'banner_image' => $pexelsImage,
                 'author_name' => 'Mahdani',
                 'artist_name' => 'Realm Art',
                 'is_featured' => true,
@@ -67,7 +69,7 @@ class ComicSeeder extends Seeder
         ];
 
         foreach ($comicsData as $data) {
-            $comic = Comic::firstOrCreate(
+            $comic = Comic::updateOrCreate(
                 ['slug' => $data['slug']],
                 array_merge($data, [
                     'publisher_id' => $publisher->id,
