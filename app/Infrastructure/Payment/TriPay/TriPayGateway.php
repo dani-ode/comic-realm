@@ -22,13 +22,13 @@ class TriPayGateway implements PaymentGateway
         $merchantCode = config('services.tripay.merchant_code');
         $apiKey = config('services.tripay.api_key');
         $privateKey = config('services.tripay.private_key');
-        $mode = config('services.tripay.mode', 'sandbox');
+        $mode = config('services.tripay.mode', 'development');
 
         $this->client = new Client([
             'merchant_code' => $merchantCode ?: 'T0001',
             'api_key' => $apiKey ?: 'sandbox-apikey',
             'private_key' => $privateKey ?: 'sandbox-privatekey',
-            'mode' => $mode === 'production' ? 'production' : 'sandbox',
+            'mode' => ($mode === 'production') ? 'production' : 'development',
         ]);
     }
 
