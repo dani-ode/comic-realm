@@ -1,21 +1,8 @@
 <script setup lang="ts">
 import { Head, useForm, Link, usePage } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 
 const page = usePage();
-
-const errorMessage = ref('');
-
-const activeError = computed(() => {
-  if (errorMessage.value) return errorMessage.value;
-  if (form.errors.login) return form.errors.login;
-  if (form.errors.password) return form.errors.password;
-  const pageProps = page.props as any;
-  if (pageProps?.errors?.login) return pageProps.errors.login;
-  if (pageProps?.errors?.password) return pageProps.errors.password;
-  if (pageProps?.flash?.error) return pageProps.flash.error;
-  return '';
-});
 
 const form = useForm({
   login: '',
@@ -23,19 +10,19 @@ const form = useForm({
   remember: false,
 });
 
+const activeError = computed(() => {
+  const pageProps = page.props as any;
+  if (form.errors.login) return form.errors.login;
+  if (form.errors.password) return form.errors.password;
+  if (pageProps?.errors?.login) return pageProps.errors.login;
+  if (pageProps?.errors?.password) return pageProps.errors.password;
+  if (pageProps?.flash?.error) return pageProps.flash.error;
+  return '';
+});
+
 const submit = () => {
-  errorMessage.value = '';
   form.post('/login', {
     onFinish: () => form.reset('password'),
-    onError: (errors: Record<string, string>) => {
-      if (errors.login) {
-        errorMessage.value = errors.login;
-      } else if (errors.password) {
-        errorMessage.value = errors.password;
-      } else {
-        errorMessage.value = Object.values(errors)[0] || 'Gagal masuk. Periksa kembali email/password Anda.';
-      }
-    },
   });
 };
 </script>
