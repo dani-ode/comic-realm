@@ -2,9 +2,15 @@
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 
-const page = usePage();
-const user = computed(() => (page.props.auth as any)?.user);
-const cartCount = computed(() => (page.props as any)?.cartCount || 0);
+const user = computed(() => {
+  const pageProps = usePage().props as any;
+  return pageProps?.auth?.user || null;
+});
+
+const cartCount = computed(() => {
+  const pageProps = usePage().props as any;
+  return pageProps?.cartCount || 0;
+});
 
 const isDropdownOpen = ref(false);
 const dropdownRef = ref<HTMLElement | null>(null);
@@ -37,9 +43,9 @@ onUnmounted(() => {
       </Link>
 
       <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
-        <Link href="/" class="text-slate-300 hover:text-white transition" :class="page.url === '/' ? 'text-sky-400 font-bold' : ''">Home</Link>
-        <Link href="/comics" class="text-slate-300 hover:text-white transition" :class="page.url.startsWith('/comics') ? 'text-sky-400 font-bold' : ''">Catalog</Link>
-        <Link href="/library" class="text-slate-300 hover:text-white transition" :class="page.url.startsWith('/library') ? 'text-sky-400 font-bold' : ''">My Library 📚</Link>
+        <Link href="/" class="text-slate-300 hover:text-white transition" :class="usePage().url === '/' ? 'text-sky-400 font-bold' : ''">Home</Link>
+        <Link href="/comics" class="text-slate-300 hover:text-white transition" :class="usePage().url.startsWith('/comics') ? 'text-sky-400 font-bold' : ''">Catalog</Link>
+        <Link href="/library" class="text-slate-300 hover:text-white transition" :class="usePage().url.startsWith('/library') ? 'text-sky-400 font-bold' : ''">My Library 📚</Link>
       </nav>
 
       <div class="flex items-center gap-3">
