@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, usePage, router } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
 
 const isDropdownOpen = ref(false);
@@ -7,6 +7,11 @@ const dropdownRef = ref<HTMLElement | null>(null);
 
 const toggleDropdown = () => {
   isDropdownOpen.value = !isDropdownOpen.value;
+};
+
+const handleLogout = () => {
+  isDropdownOpen.value = false;
+  router.post('/logout');
 };
 
 const closeDropdown = (e: MouseEvent) => {
@@ -108,16 +113,13 @@ onUnmounted(() => {
 
             <!-- Logout Button -->
             <div class="py-1">
-              <Link
-                href="/logout"
-                method="post"
-                as="button"
-                @click="isDropdownOpen = false"
+              <button
+                @click="handleLogout"
                 class="w-full text-left flex items-center gap-2 px-4 py-2 text-rose-400 hover:bg-rose-500/10 transition"
               >
                 <span>🚪</span>
                 <span>Logout</span>
-              </Link>
+              </button>
             </div>
           </div>
         </div>

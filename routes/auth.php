@@ -12,6 +12,4 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'store']);
 });
 
-Route::middleware('auth')->group(function () {
-    Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
-});
+Route::match(['get', 'post'], '/logout', [LoginController::class, 'destroy'])->name('logout');
