@@ -32,7 +32,7 @@ class LoginController extends Controller
 
         if (! Auth::attempt([$fieldType => $credentials['login'], 'password' => $credentials['password']], $credentials['remember'] ?? false)) {
             throw ValidationException::withMessages([
-                'login' => trans('auth.failed'),
+                'login' => 'Email/Username atau password yang Anda masukkan tidak sesuai.',
             ]);
         }
 

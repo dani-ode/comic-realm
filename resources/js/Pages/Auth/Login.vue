@@ -4,6 +4,7 @@ import { computed } from 'vue';
 
 const page = usePage();
 const flashError = computed(() => (page.props as any).flash?.error);
+const pageErrors = computed(() => (page.props as any).errors || {});
 
 const form = useForm({
   login: '',
@@ -35,16 +36,16 @@ const submit = () => {
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md space-y-4">
       <div class="bg-slate-900 border border-slate-800 py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 space-y-6">
-        <!-- Error Banner -->
+        <!-- Prominent Error Alert Banner -->
         <div
-          v-if="form.errors.login || form.errors.password || flashError"
+          v-if="form.hasErrors || Object.keys(pageErrors).length > 0 || flashError"
           class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-medium space-y-1"
         >
           <div class="flex items-center gap-2 font-bold text-sm">
             <span>⚠️</span> Sign In Failed
           </div>
-          <p v-if="form.errors.login">{{ form.errors.login }}</p>
-          <p v-if="form.errors.password">{{ form.errors.password }}</p>
+          <p v-if="form.errors.login || pageErrors.login">{{ form.errors.login || pageErrors.login }}</p>
+          <p v-if="form.errors.password || pageErrors.password">{{ form.errors.password || pageErrors.password }}</p>
           <p v-if="flashError">{{ flashError }}</p>
         </div>
 
@@ -58,7 +59,9 @@ const submit = () => {
               class="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 text-sm"
               placeholder="username or email@example.com"
             />
-            <p v-if="form.errors.login" class="mt-1 text-xs text-rose-400">{{ form.errors.login }}</p>
+            <p v-if="form.errors.login || pageErrors.login" class="mt-1 text-xs text-rose-400">
+              {{ form.errors.login || pageErrors.login }}
+            </p>
           </div>
 
           <div>
@@ -70,7 +73,9 @@ const submit = () => {
               class="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 text-sm"
               placeholder="••••••••"
             />
-            <p v-if="form.errors.password" class="mt-1 text-xs text-rose-400">{{ form.errors.password }}</p>
+            <p v-if="form.errors.password || pageErrors.password" class="mt-1 text-xs text-rose-400">
+              {{ form.errors.password || pageErrors.password }}
+            </p>
           </div>
 
           <div class="flex items-center justify-between">
