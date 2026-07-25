@@ -1,0 +1,156 @@
+# The ComicRealm 📖🚀
+
+**The ComicRealm** adalah platform *Webcomic Marketplace*, *Continuous Vertical Webtoon Reader*, dan *Creator Economy Publishing Platform* yang dibangun menggunakan arsitektur **Domain-Driven Design (DDD)** berbasis **Laravel 13 Monolith + Inertia.js + Vue 3 + TypeScript + Tailwind CSS v4**, terintegrasi dengan **TriPay Payment Gateway**.
+
+---
+
+## 🌟 Pilar Utama Platform
+
+```
+                          THE ComicRealm Platform
+                                     │
+       ┌─────────────────────────────┼─────────────────────────────┐
+       ▼                             ▼                             ▼
+     READ                          SHOP                         PUBLISH
+  Free & Paid Chapters         Shopping Cart               Publisher Application
+  Continuous Vertical Scroll   TriPay Gateway Integration  Create Comic & Upload Pages
+  Lazy Loading Observer        Closed Payment Channels     Ledger Financial Wallet
+  Reading Progress & Views     Automatic Entitlements      Withdrawal to Bank Account
+       │                             │                             │
+       └─────────────────────────────┼─────────────────────────────┘
+                                     │
+                                     ▼
+                               USER ACCOUNT
+                                     │
+                     ┌───────────────┼───────────────┐
+                     ▼               ▼               ▼
+                  Bookmark        Rating          Comments
+```
+
+1. **Reader Engine (Pembaca Komik Vertical Webtoon)**: Pengalaman membaca komik *continuous vertical scroll* dengan fitur *lazy loading* `IntersectionObserver`, penanda posisi baca otomatis, dan penghitung *view* unik per visitor.
+2. **Commerce & Entitlements (Marketplace & Hak Baca)**: Transaksi pembelian bab komik berbayar melalui keranjang belanja (*cart*) yang terintegrasi langsung dengan **TriPay Payment Gateway**. Hak akses membaca diberikan secara otomatis setelah konfirmasi *webhook callback*.
+3. **Creator Economy (Publishing & Ledger Keuangan)**: Kreator dapat mendaftar sebagai *Publisher*, mengunggah bab komik berformat WebP secara *batch*, serta menerima komisi bagi hasil yang dicatat dalam *Double Ledger Wallet* (`pending_balance` & `available_balance`) untuk ditarik ke rekening bank.
+
+---
+
+## 🛠️ Stack Teknologi & Arsitektur
+
+- **Backend Framework**: Laravel 13 (Domain-Driven Design Modular Architecture)
+- **Frontend Framework**: Vue 3 + TypeScript + Inertia.js (`@inertiajs/vue3`)
+- **Styling & UI**: Tailwind CSS v4 (`@tailwindcss/vite`) + TailAdmin Vue UI Component System
+- **Database**: MySQL 8.x (Tipe Data Keuangan `BIGINT`, Rating `DECIMAL`, Payload `JSON`)
+- **Payment Gateway Integration**: Abstraksi `PaymentGateway` Contract + Implementasi `TriPayGateway` (`zerosdev/tripay-sdk-php` SDK & HMAC SHA256 Webhook Verification)
+- **Testing Engine**: Pest PHP (`pestphp/pest` v3.8) - Unit & Feature Tests
+- **Data Transfer Objects**: Spatie Laravel Data (`spatie/laravel-data`)
+
+---
+
+## 📁 Arsitektur Domain-Driven Design (`app/Domain/`)
+
+Logika bisnis diisolasi ke dalam 14 Domain independen di `app/Domain/`:
+
+```
+app/
+├── Domain/                       # 14 Core Business Domains
+│   ├── User/                     # User Registration, Profile, Password, Roles
+│   ├── Comic/                    # Comics, Genres, Chapters, Page Upload Engine
+│   ├── Publisher/                # Publisher Application, Approval, Profile
+│   ├── Reading/                  # Continuous Scroll Reader, Progress, Views
+│   ├── Engagement/               # Bookmarks, Rating 1-5, Threaded Comments
+│   ├── Cart/                     # Shopping Cart, Item Management
+│   ├── Order/                    # Order Creation, Price Snapshot, Order Items
+│   ├── Payment/                  # Payment Contracts, Payment Models, Invoice Generation
+│   ├── Entitlement/              # Chapter Access Rights & Entitlement Grants
+│   ├── Wallet/                   # Publisher Wallet Ledger (Pending/Available Balance)
+│   ├── Withdrawal/               # Bank Account Verification & Withdrawal Workflow
+│   ├── Point/                    # User Point Wallet & Reward Ledger
+│   ├── Notification/             # In-app Notifications
+│   └── Admin/                    # Admin Platform Governance
+│
+├── Infrastructure/               # Third-party Integrations
+│   └── Payment/TriPay/           # TriPayGateway, TriPayClient, TriPaySignature
+│
+├── Http/                         # Thin Controllers per Context (Public, Auth, Admin, etc.)
+└── Support/                      # Custom Exceptions, Global Enums & Helpers
+```
+
+---
+
+## 📚 Cetak Biru Dokumentasi (`.blueprint/`)
+
+Dokumentasi rancangan lengkap platform dapat diakses di folder `.blueprint`:
+
+- **[README.md](file://.blueprint/README.md)**: Ringkasan Visi Produk & Pilar Ekosistem.
+- **[architecture.md](file://.blueprint/architecture.md)**: Arsitektur DDD, Layering System, dan Engine Reader.
+- **[folder-structure.md](file://.blueprint/folder-structure.md)**: Cetak Biru Hirarki Folder Lengkap Backend & Frontend.
+- **[database-schema.md](file://.blueprint/database-schema.md)**: Skema Basis Data 32 Tabel MySQL, ERD Diagram, & Sekuensi Migrasi.
+- **[commerce-and-tripay.md](file://.blueprint/commerce-and-tripay.md)**: Transaksi Commerce, Contract Interface, & Webhook TriPay.
+- **[publisher-and-creator-economy.md](file://.blueprint/publisher-and-creator-economy.md)**: Onboarding Publisher, WebP Upload Pipeline, & Wallet Ledger.
+- **[api-and-routes.md](file://.blueprint/api-and-routes.md)**: Spesifikasi Rute & Endpoint API untuk 10 File Rute Terpisah.
+- **[implementation-guide.md](file://.blueprint/implementation-guide.md)**: Panduan Eksekusi Developer 14 Step.
+- **[testing-and-qa-guide.md](file://.blueprint/testing-and-qa-guide.md)**: Panduan Testing & QA dengan Pest PHP.
+- **[development-phases.md](file://.blueprint/development-phases.md)**: Roadmap 14 Phase Domain & Strategi 3 Milestone.
+
+---
+
+## ⚡ Panduan Memulai (Installation & Setup)
+
+### 1. Requirements
+- **PHP**: `>= 8.2` (dengan ekstensi `pdo_mysql`, `mbstring`, `bcmath`, `gd`/`imagick`)
+- **Node.js**: `>= 20.x`
+- **Composer**: `>= 2.x`
+- **Database**: MySQL 8.x
+
+### 2. Pemasangan & Konfigurasi
+```bash
+# 1. Clone repositori & masuk ke direktori proyek
+cd comic-realm
+
+# 2. Pemasangan Paket Composer & NPM
+composer install
+npm install
+
+# 3. Salin file Environment & Hasilkan APP_KEY
+cp .env.example .env
+php artisan key:generate
+
+# 4. Konfigurasi Database di file .env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=comic_realm
+DB_USERNAME=root
+DB_PASSWORD=
+
+# 5. Konfigurasi TriPay Gateway Sandbox di .env
+TRIPAY_API_KEY="DEV-xxxxxxxxx"
+TRIPAY_PRIVATE_KEY="xxxx-xxxx-xxxx-xxxx"
+TRIPAY_MERCHANT_CODE="TXXXXX"
+TRIPAY_MODE="sandbox"
+
+# 6. Jalankan Migrasi Database
+php artisan migrate
+
+# 7. Build Aset Frontend
+npm run build
+```
+
+### 3. Menjalankan Server Pengembangan
+```bash
+# Terminal 1: Server Laravel
+php artisan serve
+
+# Terminal 2: Vite Hot Reloading Server
+npm run dev
+```
+
+### 4. Menjalankan Pengujian Otomatis (Pest PHP)
+```bash
+./vendor/bin/pest
+```
+
+---
+
+## 📄 Lisensi
+
+Proyek **The ComicRealm** dikembangkan di bawah lisensi [MIT License](LICENSE).
