@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Link, usePage, router } from '@inertiajs/vue3';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watchEffect } from 'vue';
 
+const page = usePage();
 const isDropdownOpen = ref(false);
 const dropdownRef = ref<HTMLElement | null>(null);
 
@@ -20,6 +21,15 @@ const closeDropdown = (e: MouseEvent) => {
   }
 };
 
+watchEffect(() => {
+  console.log('========================================');
+  console.log('[PublicLayout Debug] Current URL:', page.url);
+  console.log('[PublicLayout Debug] Full $page.props:', page.props);
+  console.log('[PublicLayout Debug] $page.props.auth:', (page.props as any).auth);
+  console.log('[PublicLayout Debug] $page.props.auth?.user:', (page.props as any).auth?.user);
+  console.log('========================================');
+});
+
 onMounted(() => {
   window.addEventListener('click', closeDropdown);
 });
@@ -31,6 +41,14 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <!-- Visual Debug Banner at Top of Screen -->
+    <div class="bg-amber-500/20 border-b border-amber-500/40 px-4 py-1.5 text-center text-xs font-mono text-amber-300">
+      ⚡ [DEBUG BAR] User Status:
+      <span class="font-bold underline" :class="($page.props.auth as any)?.user ? 'text-emerald-400' : 'text-rose-400'">
+        {{ ($page.props.auth as any)?.user ? `LOGGED IN as ${($page.props.auth as any).user.name} (${($page.props.auth as any).user.email})` : 'NOT LOGGED IN (GUEST - null)' }}
+      </span>
+    </div>
+
     <!-- Navbar Header -->
     <header class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 flex items-center justify-between">
       <Link href="/" class="text-xl font-extrabold bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
@@ -117,7 +135,7 @@ onUnmounted(() => {
                 @click="handleLogout"
                 class="w-full text-left flex items-center gap-2 px-4 py-2 text-rose-400 hover:bg-rose-500/10 transition"
               >
-                <span>MSO 🚪</span>
+                <span>🚪</span>
                 <span>Logout</span>
               </button>
             </div>
