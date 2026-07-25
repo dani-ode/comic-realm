@@ -23,21 +23,24 @@ const form = useForm({
   remember: false,
 });
 
-const submit = () => {
-  console.log('[Login.vue] Form submitted:', form.login);
+const submit = (e?: Event) => {
+  if (e) e.preventDefault();
+  console.log('[Login.vue] Form submitted via Inertia AJAX:', form.login);
   errorMessage.value = '';
 
   form.post('/login', {
-    onStart: () => console.log('[Login.vue] Request sent to /login...'),
-    onSuccess: () => console.log('[Login.vue] Request successful (Redirecting...)'),
+    preserveState: true,
+    preserveScroll: true,
+    onStart: () => console.log('[Login.vue] Inertia POST starting...'),
+    onSuccess: () => console.log('[Login.vue] Inertia POST success'),
     onError: (errors: Record<string, string>) => {
-      console.error('[Login.vue] Request returned errors:', errors);
+      console.error('[Login.vue] Inertia POST returned errors:', errors);
       const msg = errors.login || errors.password || Object.values(errors)[0] || 'Email/Username atau password yang Anda masukkan tidak sesuai.';
       errorMessage.value = msg;
       alert('⚠️ Sign In Failed:\n' + msg);
     },
     onFinish: () => {
-      console.log('[Login.vue] Request finished.');
+      console.log('[Login.vue] Inertia POST finished.');
       form.reset('password');
     },
   });
@@ -115,7 +118,8 @@ const submit = () => {
 
           <div>
             <button
-              type="submit"
+              type="button"
+              @click="submit"
               :disabled="form.processing"
               class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-white bg-sky-600 hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 disabled:opacity-50 transition shadow-lg shadow-sky-600/30"
             >
