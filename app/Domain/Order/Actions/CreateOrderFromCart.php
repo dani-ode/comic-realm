@@ -27,6 +27,24 @@ class CreateOrderFromCart
                 throw new InvalidArgumentException('Keranjang belanja Anda kosong.');
             }
 
+            $cartChapterIds = $cart->items->pluck('chapter_id')->toArray();
+
+            // Batalkan pesanan pending sebelumnya yang berisi item yang sama agar tidak ganda
+            $pendingOrders = Order::with('payment')
+                ->where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->whereHas('items', function ($query) use ($cartChapterIds) {
+                    $query->whereIn('chapter_id', $cartChapterIds);
+                })
+                ->get();
+
+            foreach ($pendingOrders as $pendingOrder) {
+                $pendingOrder->update(['status' => 'cancelled']);
+                if ($pendingOrder->payment) {
+                    $pendingOrder->payment->update(['status' => 'CANCELLED']);
+                }
+            }
+
             $orderNumber = $this->numberGenerator->generate();
             $subtotal = $cart->total_amount;
 

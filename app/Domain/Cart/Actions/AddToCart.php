@@ -37,6 +37,21 @@ class AddToCart
                 }
             }
 
+            // Periksa apakah bab ini sudah ada di pesanan pengguna yang berstatus pending (belum lunas)
+            $hasPendingOrder = DB::table('order_items')
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->where('orders.user_id', $user->id)
+                ->where('orders.status', 'pending')
+                ->where('order_items.chapter_id', $chapter->id)
+                ->where(function ($q) {
+                    $q->whereNull('orders.expired_at')->orWhere('orders.expired_at', '>', now());
+                })
+                ->exists();
+
+            if ($hasPendingOrder) {
+                throw new InvalidArgumentException('Bab ini sudah ada dalam pesanan Anda yang belum dibayar (Pending). Silakan lunasi atau batalkan pesanan sebelumnya di menu My Orders.');
+            }
+
             $cart = Cart::firstOrCreate(
                 ['user_id' => $user->id],
                 ['total_amount' => 0]

@@ -94,6 +94,15 @@ onUnmounted(() => {
             <!-- Links -->
             <div class="py-1">
               <Link
+                href="/orders"
+                @click="isDropdownOpen = false"
+                class="flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition"
+              >
+                <span>💳</span>
+                <span>My Orders & Transactions</span>
+              </Link>
+
+              <Link
                 href="/publisher/dashboard"
                 @click="isDropdownOpen = false"
                 class="flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition"
