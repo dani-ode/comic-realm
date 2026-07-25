@@ -72,12 +72,6 @@ const isInCart = (chapterId: number) => {
 };
 
 const handleAddToCart = async (chapterId: number) => {
-  const user = (page.props.auth as any)?.user;
-  if (!user) {
-    router.get('/login');
-    return;
-  }
-
   if (isInCart(chapterId)) {
     router.get('/cart');
     return;
