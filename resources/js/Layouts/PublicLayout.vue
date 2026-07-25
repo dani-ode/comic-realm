@@ -1,10 +1,31 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 
 const page = usePage();
 const user = computed(() => (page.props.auth as any)?.user);
 const cartCount = computed(() => (page.props as any)?.cartCount || 0);
+
+const isDropdownOpen = ref(false);
+const dropdownRef = ref<HTMLElement | null>(null);
+
+const toggleDropdown = () => {
+  isDropdownOpen.value = !isDropdownOpen.value;
+};
+
+const closeDropdown = (e: MouseEvent) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(e.target as Node)) {
+    isDropdownOpen.value = false;
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('click', closeDropdown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('click', closeDropdown);
+});
 </script>
 
 <template>
@@ -29,11 +50,83 @@ const cartCount = computed(() => (page.props as any)?.cartCount || 0);
           </span>
         </Link>
 
-        <div v-if="user" class="flex items-center gap-2">
-          <Link href="/publisher/dashboard" class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-sky-600/20 text-sky-400 border border-sky-500/30 hover:bg-sky-600/30 transition">
-            Studio 🎨
-          </Link>
+        <!-- Authenticated User Profile Dropdown -->
+        <div v-if="user" ref="dropdownRef" class="relative">
+          <button
+            @click.stop="toggleDropdown"
+            class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 transition focus:outline-none"
+          >
+            <!-- User Avatar -->
+            <img
+              v-if="user.avatar"
+              :src="user.avatar"
+              :alt="user.name"
+              class="w-7 h-7 rounded-full object-cover border border-slate-700 shrink-0"
+            />
+            <div
+              v-else
+              class="w-7 h-7 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 text-white font-bold text-xs flex items-center justify-center border border-sky-400/30 shrink-0"
+            >
+              {{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}
+            </div>
+
+            <!-- Name (Hidden on mobile, visible on desktop) -->
+            <span class="hidden sm:inline-block text-xs font-semibold text-white max-w-[120px] truncate">
+              {{ user.name }}
+            </span>
+
+            <span class="text-[10px] text-slate-400 transition-transform" :class="isDropdownOpen ? 'rotate-180' : ''">▼</span>
+          </button>
+
+          <!-- Dropdown Popover Menu -->
+          <div
+            v-if="isDropdownOpen"
+            class="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl py-2 z-50 divide-y divide-slate-800 text-xs"
+          >
+            <!-- User Info Header -->
+            <div class="px-4 py-2.5">
+              <p class="font-bold text-white truncate">{{ user.name }}</p>
+              <p class="text-[11px] text-slate-400 truncate">@{{ user.username || user.email }}</p>
+            </div>
+
+            <!-- Links -->
+            <div class="py-1">
+              <Link
+                href="/publisher/dashboard"
+                @click="isDropdownOpen = false"
+                class="flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition"
+              >
+                <span>🎨</span>
+                <span>Publish Your Webcomic</span>
+              </Link>
+
+              <Link
+                href="/library"
+                @click="isDropdownOpen = false"
+                class="flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition"
+              >
+                <span>📚</span>
+                <span>My Library</span>
+              </Link>
+            </div>
+
+            <!-- Logout Button -->
+            <div class="py-1">
+              <Link
+                href="/logout"
+                method="post"
+                as="button"
+                @click="isDropdownOpen = false"
+                class="w-full text-left flex items-center gap-2 px-4 py-2 text-rose-400 hover:bg-rose-500/10 transition"
+              >
+                <span>🚪</span>
+                <span>Logout</span>
+              </Link>
+            </div>
+          </div>
         </div>
+
+        <!-- Guest Links -->
         <div v-else class="flex items-center gap-2">
           <Link href="/login" class="text-xs font-semibold px-3 py-1.5 text-slate-300 hover:text-white">Sign In</Link>
           <Link href="/register" class="text-xs font-bold px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white transition">Register</Link>

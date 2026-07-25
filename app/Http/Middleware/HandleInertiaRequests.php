@@ -39,7 +39,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user() ? $request->user()->only(['id', 'name', 'email', 'role', 'username']) : null,
+                'user' => $request->user() ? $request->user()->only(['id', 'name', 'email', 'role', 'username', 'avatar']) : null,
             ],
             'cartCount' => function () use ($request) {
                 if (! $request->user()) {
