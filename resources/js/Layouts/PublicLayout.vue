@@ -1,16 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { computed, ref, onMounted, onUnmounted } from 'vue';
-
-const user = computed(() => {
-  const pageProps = usePage().props as any;
-  return pageProps?.auth?.user || null;
-});
-
-const cartCount = computed(() => {
-  const pageProps = usePage().props as any;
-  return pageProps?.cartCount || 0;
-});
+import { ref, onMounted, onUnmounted } from 'vue';
 
 const isDropdownOpen = ref(false);
 const dropdownRef = ref<HTMLElement | null>(null);
@@ -51,34 +41,34 @@ onUnmounted(() => {
       <div class="flex items-center gap-3">
         <Link href="/cart" class="relative text-xs font-semibold px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition">
           Cart 🛒
-          <span v-if="cartCount > 0" class="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-sky-500 text-white">
-            {{ cartCount }}
+          <span v-if="($page.props as any).cartCount > 0" class="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-sky-500 text-white">
+            {{ ($page.props as any).cartCount }}
           </span>
         </Link>
 
         <!-- Authenticated User Profile Dropdown -->
-        <div v-if="user" ref="dropdownRef" class="relative">
+        <div v-if="($page.props.auth as any)?.user" ref="dropdownRef" class="relative">
           <button
             @click.stop="toggleDropdown"
             class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 transition focus:outline-none"
           >
             <!-- User Avatar -->
             <img
-              v-if="user.avatar"
-              :src="user.avatar"
-              :alt="user.name"
+              v-if="($page.props.auth as any).user.avatar"
+              :src="($page.props.auth as any).user.avatar"
+              :alt="($page.props.auth as any).user.name"
               class="w-7 h-7 rounded-full object-cover border border-slate-700 shrink-0"
             />
             <div
               v-else
               class="w-7 h-7 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 text-white font-bold text-xs flex items-center justify-center border border-sky-400/30 shrink-0"
             >
-              {{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}
+              {{ ($page.props.auth as any).user.name ? ($page.props.auth as any).user.name.charAt(0).toUpperCase() : 'U' }}
             </div>
 
             <!-- Name (Hidden on mobile, visible on desktop) -->
             <span class="hidden sm:inline-block text-xs font-semibold text-white max-w-[120px] truncate">
-              {{ user.name }}
+              {{ ($page.props.auth as any).user.name }}
             </span>
 
             <span class="text-[10px] text-slate-400 transition-transform" :class="isDropdownOpen ? 'rotate-180' : ''">▼</span>
@@ -91,8 +81,8 @@ onUnmounted(() => {
           >
             <!-- User Info Header -->
             <div class="px-4 py-2.5">
-              <p class="font-bold text-white truncate">{{ user.name }}</p>
-              <p class="text-[11px] text-slate-400 truncate">@{{ user.username || user.email }}</p>
+              <p class="font-bold text-white truncate">{{ ($page.props.auth as any).user.name }}</p>
+              <p class="text-[11px] text-slate-400 truncate">@{{ ($page.props.auth as any).user.username || ($page.props.auth as any).user.email }}</p>
             </div>
 
             <!-- Links -->
