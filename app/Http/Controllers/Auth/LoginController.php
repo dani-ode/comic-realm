@@ -13,8 +13,15 @@ use Inertia\Response as InertiaResponse;
 
 class LoginController extends Controller
 {
-    public function create(): InertiaResponse
+    public function create(Request $request): InertiaResponse
     {
+        if (! $request->session()->has('url.intended') && $request->headers->get('referer')) {
+            $referer = $request->headers->get('referer');
+            if (! str_contains($referer, '/login') && ! str_contains($referer, '/register')) {
+                $request->session()->put('url.intended', $referer);
+            }
+        }
+
         return Inertia::render('Auth/Login');
     }
 

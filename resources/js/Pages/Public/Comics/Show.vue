@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import axios from 'axios';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import GenreBadge from '@/Components/Comic/GenreBadge.vue';
 import BookmarkButton from '@/Components/Engagement/BookmarkButton.vue';
@@ -54,9 +53,9 @@ const props = withDefaults(defineProps<{
 
 const page = usePage();
 const flashError = computed(() => (page.props as any).flash?.error);
+const flashSuccess = computed(() => (page.props as any).flash?.success);
 
 const isAdding = ref<number | null>(null);
-const successMessage = ref('');
 
 const isUnlocked = (chapterId: number, isFree: boolean) => {
   return isFree || (props.unlockedChapterIds && props.unlockedChapterIds.includes(chapterId));
@@ -66,7 +65,7 @@ const isInCart = (chapterId: number) => {
   return props.cartChapterIds && props.cartChapterIds.includes(chapterId);
 };
 
-const handleAddToCart = async (chapterId: number) => {
+const handleAddToCart = (chapterId: number) => {
   const user = (page.props.auth as any)?.user;
   if (!user) {
     router.get('/login');
@@ -79,22 +78,13 @@ const handleAddToCart = async (chapterId: number) => {
   }
 
   isAdding.value = chapterId;
-  successMessage.value = '';
 
-  try {
-    const res = await axios.post('/api/cart/items', { chapter_id: chapterId });
-    if (res.data && res.data.success) {
-      successMessage.value = res.data.message || 'Bab berhasil ditambahkan ke keranjang!';
-      router.reload({ only: ['cartCount', 'cartChapterIds'] });
-      setTimeout(() => {
-        successMessage.value = '';
-      }, 4000);
-    }
-  } catch (err: any) {
-    alert(err.response?.data?.message || 'Gagal menambahkan bab ke keranjang.');
-  } finally {
-    isAdding.value = null;
-  }
+  router.post('/cart/add', { chapter_id: chapterId }, {
+    preserveScroll: true,
+    onFinish: () => {
+      isAdding.value = null;
+    },
+  });
 };
 </script>
 
@@ -167,10 +157,10 @@ const handleAddToCart = async (chapterId: number) => {
         {{ flashError }}
       </div>
 
-      <!-- Success Notification Banner -->
-      <div v-if="successMessage" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-5 py-3.5 rounded-xl text-sm font-medium flex items-center justify-between">
+      <!-- Flash Success Banner -->
+      <div v-if="flashSuccess" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-5 py-3.5 rounded-xl text-sm font-medium flex items-center justify-between">
         <span class="flex items-center gap-2">
-          <span>🛒</span> {{ successMessage }}
+          <span>🛒</span> {{ flashSuccess }}
         </span>
         <Link href="/cart" class="text-xs font-bold underline hover:text-white">Lihat Keranjang →</Link>
       </div>

@@ -9,6 +9,7 @@ use App\Domain\Cart\Models\Cart;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Cart\AddToCartRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -39,21 +40,29 @@ class CartController extends Controller
         ]);
     }
 
-    public function store(AddToCartRequest $request, AddToCart $addToCart): JsonResponse
+    public function store(AddToCartRequest $request, AddToCart $addToCart): JsonResponse|RedirectResponse
     {
         try {
             $cart = $addToCart->execute($request->user(), $request->toDTO());
 
-            return response()->json([
-                'success' => true,
-                'cart' => $cart,
-                'message' => 'Bab berhasil ditambahkan ke keranjang belanja.',
-            ]);
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => true,
+                    'cart' => $cart,
+                    'message' => 'Bab berhasil ditambahkan ke keranjang belanja.',
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Bab berhasil ditambahkan ke keranjang belanja.');
         } catch (InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
