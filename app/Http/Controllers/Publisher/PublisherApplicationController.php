@@ -17,7 +17,8 @@ class PublisherApplicationController extends Controller
     {
         $profile = PublisherProfile::where('user_id', $request->user()->id)->first();
 
-        if ($profile && $profile->isApproved()) {
+        // Jika sudah mendaftar studio (baik status pending maupun approved), langsung redirect ke dashboard
+        if ($profile) {
             return redirect()->route('publisher.dashboard');
         }
 
@@ -28,8 +29,13 @@ class PublisherApplicationController extends Controller
 
     public function store(ApplyPublisherRequest $request, ApplyPublisher $applyPublisher): RedirectResponse
     {
+        $profile = PublisherProfile::where('user_id', $request->user()->id)->first();
+        if ($profile) {
+            return redirect()->route('publisher.dashboard');
+        }
+
         $applyPublisher->execute($request->user(), $request->toDTO());
 
-        return redirect()->route('publisher.dashboard')->with('success', 'Pendaftaran Publisher berhasil! Selamat datang di Studio Kreator.');
+        return redirect()->route('publisher.dashboard')->with('success', 'Pendaftaran Publisher berhasil! Pengajuan Anda sedang dalam proses verifikasi admin.');
     }
 }

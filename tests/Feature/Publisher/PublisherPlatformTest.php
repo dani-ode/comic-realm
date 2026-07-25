@@ -2,11 +2,12 @@
 
 use App\Domain\Comic\Models\Comic;
 use App\Domain\Comic\Models\Genre;
+use App\Domain\Publisher\Models\PublisherProfile;
 use App\Domain\User\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
-it('allows regular user to apply for publisher role', function () {
+it('allows regular user to apply for publisher role and redirects if already applied', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post('/publisher/apply', [
@@ -23,13 +24,24 @@ it('allows regular user to apply for publisher role', function () {
         'user_id' => $user->id,
         'brand_name' => 'Studio Zero',
     ]);
+
+    // Jika mengakses route /publisher/apply lagi saat sudah punya studio -> langsung redirect ke dashboard
+    $responseApplyAgain = $this->actingAs($user)->get('/publisher/apply');
+    $responseApplyAgain->assertRedirect(route('publisher.dashboard'));
 });
 
-it('allows publisher to create new comic series and publish chapter with pages', function () {
+it('allows approved publisher to create new comic series and publish chapter with pages', function () {
     Storage::fake('public');
 
     $genre = Genre::factory()->create();
     $publisher = User::factory()->publisher()->create();
+
+    PublisherProfile::create([
+        'user_id' => $publisher->id,
+        'brand_name' => 'Studio Ninja',
+        'slug' => 'studio-ninja',
+        'verification_status' => 'approved',
+    ]);
 
     // 1. Create Comic
     $responseComic = $this->actingAs($publisher)->post('/publisher/comics', [
@@ -65,4 +77,28 @@ it('allows publisher to create new comic series and publish chapter with pages',
     $this->assertDatabaseHas('chapter_pages', [
         'page_number' => 1,
     ]);
+});
+
+it('blocks unapproved studio from creating new comics', function () {
+    $genre = Genre::factory()->create();
+    $user = User::factory()->create();
+
+    // Studio pending approval
+    PublisherProfile::create([
+        'user_id' => $user->id,
+        'brand_name' => 'Pending Studio',
+        'slug' => 'pending-studio',
+        'verification_status' => 'pending',
+    ]);
+
+    $response = $this->actingAs($user)->post('/publisher/comics', [
+        'title' => 'Unapproved Comic',
+        'description' => 'Test',
+        'cover_image' => 'https://picsum.photos/400/600',
+        'status' => 'ongoing',
+        'genres' => [$genre->id],
+    ]);
+
+    $response->assertRedirect(route('publisher.dashboard'));
+    $this->assertDatabaseMissing('comics', ['title' => 'Unapproved Comic']);
 });

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Publisher;
 use App\Domain\Comic\Models\Chapter;
 use App\Domain\Comic\Models\Comic;
 use App\Domain\Publisher\Actions\UploadChapterPagesBatch;
+use App\Domain\Publisher\Models\PublisherProfile;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Publisher\UploadChapterPagesRequest;
 use Illuminate\Http\JsonResponse;
@@ -16,10 +17,17 @@ use Inertia\Response as InertiaResponse;
 
 class PublisherChapterController extends Controller
 {
-    public function create(int $comicId, Request $request): InertiaResponse
+    public function create(int $comicId, Request $request): InertiaResponse|RedirectResponse
     {
+        $user = $request->user();
+        $profile = PublisherProfile::where('user_id', $user->id)->first();
+
+        if (! $profile || ! $profile->isApproved()) {
+            return redirect()->route('publisher.dashboard')->with('error', 'Studio Anda belum disetujui oleh admin. Anda belum dapat menerbitkan bab baru.');
+        }
+
         $comic = Comic::where('id', $comicId)
-            ->where('publisher_id', $request->user()->id)
+            ->where('publisher_id', $user->id)
             ->firstOrFail();
 
         return Inertia::render('Publisher/Chapters/Create', [
@@ -29,6 +37,13 @@ class PublisherChapterController extends Controller
 
     public function store(int $comicId, Request $request, UploadChapterPagesBatch $uploadBatch): RedirectResponse
     {
+        $user = $request->user();
+        $profile = PublisherProfile::where('user_id', $user->id)->first();
+
+        if (! $profile || ! $profile->isApproved()) {
+            return redirect()->route('publisher.dashboard')->with('error', 'Studio Anda belum disetujui oleh admin. Anda belum dapat menerbitkan bab baru.');
+        }
+
         $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'chapter_number' => ['required', 'numeric', 'min:0.1'],
@@ -38,7 +53,7 @@ class PublisherChapterController extends Controller
         ]);
 
         $comic = Comic::where('id', $comicId)
-            ->where('publisher_id', $request->user()->id)
+            ->where('publisher_id', $user->id)
             ->firstOrFail();
 
         $chapterNumber = (float) $request->input('chapter_number');
@@ -64,9 +79,19 @@ class PublisherChapterController extends Controller
 
     public function uploadPages(UploadChapterPagesRequest $request, UploadChapterPagesBatch $uploadBatch): JsonResponse
     {
+        $user = $request->user();
+        $profile = PublisherProfile::where('user_id', $user->id)->first();
+
+        if (! $profile || ! $profile->isApproved()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Studio Anda belum disetujui oleh admin.',
+            ], 403);
+        }
+
         $chapter = Chapter::with('comic')
             ->where('id', $request->input('chapter_id'))
-            ->whereHas('comic', fn ($q) => $q->where('publisher_id', $request->user()->id))
+            ->whereHas('comic', fn ($q) => $q->where('publisher_id', $user->id))
             ->firstOrFail();
 
         $pages = $uploadBatch->execute($chapter, $request->file('pages'));
