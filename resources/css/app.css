@@ -2,6 +2,9 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased selection:bg-sky-500 selection:text-white;
+    background-color: #020617;
+    color: #f8fafc;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 }
