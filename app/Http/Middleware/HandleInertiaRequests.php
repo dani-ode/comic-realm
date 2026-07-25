@@ -53,6 +53,19 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            'errors' => function () use ($request) {
+                if ($request->session()->has('errors')) {
+                    $bags = $request->session()->get('errors')->getBags();
+                    $errors = [];
+                    foreach ($bags as $bag) {
+                        foreach ($bag->messages() as $key => $messages) {
+                            $errors[$key] = $messages[0] ?? '';
+                        }
+                    }
+                    return (object) $errors;
+                }
+                return (object) [];
+            },
         ];
     }
 }

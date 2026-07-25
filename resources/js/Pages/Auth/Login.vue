@@ -3,9 +3,19 @@ import { Head, useForm, Link, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 const page = usePage();
-const flashError = computed(() => (page.props as any).flash?.error);
 
 const errorMessage = ref('');
+
+const activeError = computed(() => {
+  if (errorMessage.value) return errorMessage.value;
+  if (form.errors.login) return form.errors.login;
+  if (form.errors.password) return form.errors.password;
+  const pageProps = page.props as any;
+  if (pageProps?.errors?.login) return pageProps.errors.login;
+  if (pageProps?.errors?.password) return pageProps.errors.password;
+  if (pageProps?.flash?.error) return pageProps.flash.error;
+  return '';
+});
 
 const form = useForm({
   login: '',
@@ -49,13 +59,13 @@ const submit = () => {
       <div class="bg-slate-900 border border-slate-800 py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 space-y-6">
         <!-- Prominent Error Alert Banner -->
         <div
-          v-if="errorMessage || form.errors.login || form.errors.password || flashError"
+          v-if="activeError"
           class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-medium space-y-1"
         >
           <div class="flex items-center gap-2 font-bold text-sm">
             <span>⚠️</span> Sign In Failed
           </div>
-          <p>{{ errorMessage || form.errors.login || form.errors.password || flashError }}</p>
+          <p>{{ activeError }}</p>
         </div>
 
         <form class="space-y-5" @submit.prevent="submit">
