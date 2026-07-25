@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 import ComicCard from '@/Components/Comic/ComicCard.vue';
-
-interface Genre {
-  id: number;
-  name: string;
-  slug: string;
-}
+import GenreBadge from '@/Components/Comic/GenreBadge.vue';
 
 interface Comic {
   id: number;
@@ -16,125 +12,95 @@ interface Comic {
   rating_average: number;
   total_views: number;
   status: string;
-  genres?: Genre[];
-  publisher?: { name: string };
+  author_name?: string;
+  genres?: Array<{ id: number; name: string; slug: string }>;
+  chapters_count?: number;
+}
+
+interface Genre {
+  id: number;
+  name: string;
+  slug: string;
+  color_code?: string;
 }
 
 defineProps<{
   featuredComics: Comic[];
   popularComics: Comic[];
-  latestUpdates: Comic[];
+  latestComics: Comic[];
   genres: Genre[];
 }>();
 </script>
 
 <template>
-  <Head title="Home - Read. Create. Publish." />
+  <Head title="Home - Premium Webcomics & Manga" />
 
-  <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-    <!-- Navbar Header -->
-    <header class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 flex items-center justify-between">
-      <Link href="/" class="text-xl font-extrabold bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-        The ComicRealm
-      </Link>
-
-      <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
-        <Link href="/" class="text-sky-400">Home</Link>
-        <Link href="/comics" class="text-slate-300 hover:text-white transition">Catalog</Link>
-        <Link href="/comics?sort=popular" class="text-slate-300 hover:text-white transition">Popular</Link>
-      </nav>
-
-      <div class="flex items-center gap-3">
-        <Link href="/login" class="text-sm font-medium px-4 py-2 rounded-xl text-slate-300 hover:text-white transition">
-          Sign In
-        </Link>
-        <Link href="/register" class="text-sm font-semibold px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white transition shadow-lg shadow-sky-600/30">
-          Get Started
-        </Link>
-      </div>
-    </header>
-
-    <!-- Hero Banner -->
-    <section class="relative bg-gradient-to-b from-slate-900 to-slate-950 py-16 px-4 lg:px-8 border-b border-slate-800/60">
-      <div class="max-w-7xl mx-auto text-center">
-        <div class="inline-block px-4 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 text-sm font-medium mb-6">
-          ✨ Webcomic Marketplace & Reader Engine
+  <PublicLayout>
+    <div class="space-y-12 py-8">
+      <!-- Hero Banner Section -->
+      <section class="max-w-7xl mx-auto px-4 lg:px-8">
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-sky-900/60 via-indigo-900/40 to-slate-900 border border-slate-800 p-8 lg:p-12 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
+          <div class="space-y-4 max-w-xl text-center md:text-left z-10">
+            <span class="inline-block px-3 py-1 text-xs font-bold rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/30">
+              ⚡ Webtoon Reader Engine 2.0
+            </span>
+            <h1 class="text-3xl lg:text-5xl font-black text-white leading-tight">
+              Discover Next-Gen Vertical Webcomics
+            </h1>
+            <p class="text-sm lg:text-base text-slate-300">
+              Read free daily updates or unlock premium chapters instantly with TriPay closed payments (QRIS, VA, E-Wallet).
+            </p>
+            <div class="pt-2 flex flex-wrap gap-4 justify-center md:justify-start">
+              <Link href="/comics" class="px-6 py-3.5 rounded-xl font-bold text-sm bg-sky-600 hover:bg-sky-500 text-white transition shadow-xl shadow-sky-600/30">
+                Explore All Comics →
+              </Link>
+              <Link href="/publisher/apply" class="px-6 py-3.5 rounded-xl font-bold text-sm bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition">
+                Publish Your Webcomic 🎨
+              </Link>
+            </div>
+          </div>
         </div>
-        <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6 bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-          Read Endless Webcomics. <br class="hidden sm:inline" />Support Independent Creators.
-        </h1>
-        <p class="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto mb-8">
-          Explore high-quality vertical webcomics, unlock chapters securely with TriPay Gateway, and follow top independent artists.
-        </p>
+      </section>
 
-        <div class="flex flex-wrap items-center justify-center gap-4">
-          <Link href="/comics" class="px-7 py-3.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold transition shadow-xl shadow-sky-600/30">
-            Explore All Comics
-          </Link>
-          <Link href="/register" class="px-7 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-white font-semibold transition">
-            Become a Publisher
-          </Link>
+      <!-- Genres Bar -->
+      <section class="max-w-7xl mx-auto px-4 lg:px-8">
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <GenreBadge v-for="genre in genres" :key="genre.id" :genre="genre" />
         </div>
-      </div>
-    </section>
-
-    <!-- Main Content Container -->
-    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-12 space-y-16 w-full flex-1">
+      </section>
 
       <!-- Featured Comics Section -->
-      <section v-if="featuredComics && featuredComics.length">
-        <div class="flex items-center justify-between mb-6">
+      <section class="max-w-7xl mx-auto px-4 lg:px-8 space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
           <div>
-            <h2 class="text-2xl font-bold text-white flex items-center gap-2">
-              🔥 Featured Comics
+            <h2 class="text-2xl font-black text-white flex items-center gap-2">
+              🔥 Trending Webcomics
             </h2>
-            <p class="text-xs text-slate-400">Hand-picked webcomics recommended for you</p>
+            <p class="text-xs text-slate-400 mt-0.5">Most read series this week</p>
           </div>
-          <Link href="/comics" class="text-sm font-semibold text-sky-400 hover:underline">View All →</Link>
+          <Link href="/comics" class="text-xs font-bold text-sky-400 hover:underline">View All →</Link>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
           <ComicCard v-for="comic in featuredComics" :key="comic.id" :comic="comic" />
         </div>
       </section>
 
-      <!-- Popular Comics Section -->
-      <section v-if="popularComics && popularComics.length">
-        <div class="flex items-center justify-between mb-6">
+      <!-- Latest Released Comics Section -->
+      <section class="max-w-7xl mx-auto px-4 lg:px-8 space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-800/80 pb-4">
           <div>
-            <h2 class="text-2xl font-bold text-white flex items-center gap-2">
-              ⭐ Top Rated & Popular
+            <h2 class="text-2xl font-black text-white flex items-center gap-2">
+              🆕 Fresh Chapter Updates
             </h2>
-            <p class="text-xs text-slate-400">Most read webcomics by the community</p>
+            <p class="text-xs text-slate-400 mt-0.5">Recently published webcomic episodes</p>
           </div>
-          <Link href="/comics?sort=popular" class="text-sm font-semibold text-sky-400 hover:underline">View All →</Link>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
-          <ComicCard v-for="comic in popularComics" :key="comic.id" :comic="comic" />
-        </div>
-      </section>
-
-      <!-- Genres Quick Filter -->
-      <section v-if="genres && genres.length" class="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-        <h3 class="text-lg font-bold text-white mb-4">Browse by Genre</h3>
-        <div class="flex flex-wrap gap-2.5">
-          <Link
-            v-for="genre in genres"
-            :key="genre.id"
-            :href="`/comics?genre=${genre.slug}`"
-            class="px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm font-medium text-slate-300 hover:text-white hover:border-sky-500/50 hover:bg-slate-900 transition"
-          >
-            {{ genre.name }}
-          </Link>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+          <ComicCard v-for="comic in latestComics" :key="comic.id" :comic="comic" />
         </div>
       </section>
-
-    </main>
-
-    <!-- Footer -->
-    <footer class="border-t border-slate-800/80 py-8 px-4 text-center text-xs text-slate-500">
-      <p>© {{ new Date().getFullYear() }} The ComicRealm. All rights reserved. Powered by Laravel 13 & Inertia.js.</p>
-    </footer>
-  </div>
+    </div>
+  </PublicLayout>
 </template>

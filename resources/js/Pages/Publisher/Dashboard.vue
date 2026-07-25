@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 
 interface Chapter {
   id: number;
@@ -28,26 +29,17 @@ defineProps<{
 <template>
   <Head title="Creator Studio Dashboard" />
 
-  <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-    <!-- Navbar Header -->
-    <header class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 flex items-center justify-between">
-      <Link href="/" class="text-xl font-extrabold bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-        The ComicRealm Studio 🎨
-      </Link>
-
-      <div class="flex items-center gap-3">
-        <Link href="/publisher/comics/create" class="px-4 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white transition shadow-md shadow-sky-600/30">
-          + Create New Comic
-        </Link>
-      </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-4 lg:px-8 py-10 w-full flex-1 space-y-8">
+  <AdminLayout>
+    <div class="space-y-8">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 class="text-3xl font-extrabold text-white">Publisher Studio Dashboard</h1>
           <p class="text-sm text-slate-400 mt-1">Manage your webcomics, publish new chapters, and track views</p>
         </div>
+
+        <Link href="/publisher/comics/create" class="px-5 py-3 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white transition shadow-lg shadow-sky-600/30 self-start">
+          + Create New Comic Series
+        </Link>
       </div>
 
       <!-- Published Comics List -->
@@ -100,6 +92,6 @@ defineProps<{
           </Link>
         </div>
       </div>
-    </main>
-  </div>
+    </div>
+  </AdminLayout>
 </template>
