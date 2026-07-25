@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Head, Link, usePage, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import axios from 'axios';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import GenreBadge from '@/Components/Comic/GenreBadge.vue';
 import BookmarkButton from '@/Components/Engagement/BookmarkButton.vue';
@@ -48,6 +49,35 @@ defineProps<{
 
 const page = usePage();
 const flashError = computed(() => (page.props as any).flash?.error);
+
+const isAdding = ref<number | null>(null);
+const successMessage = ref('');
+
+const handleAddToCart = async (chapterId: number) => {
+  const user = (page.props.auth as any)?.user;
+  if (!user) {
+    router.get('/login');
+    return;
+  }
+
+  isAdding.value = chapterId;
+  successMessage.value = '';
+
+  try {
+    const res = await axios.post('/api/cart/items', { chapter_id: chapterId });
+    if (res.data && res.data.success) {
+      successMessage.value = res.data.message || 'Bab berhasil ditambahkan ke keranjang!';
+      router.reload({ only: ['cartCount'] });
+      setTimeout(() => {
+        successMessage.value = '';
+      }, 4000);
+    }
+  } catch (err: any) {
+    alert(err.response?.data?.message || 'Gagal menambahkan bab ke keranjang.');
+  } finally {
+    isAdding.value = null;
+  }
+};
 </script>
 
 <template>
@@ -119,6 +149,14 @@ const flashError = computed(() => (page.props as any).flash?.error);
         {{ flashError }}
       </div>
 
+      <!-- Success Notification Banner -->
+      <div v-if="successMessage" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-5 py-3.5 rounded-xl text-sm font-medium flex items-center justify-between">
+        <span class="flex items-center gap-2">
+          <span>🛒</span> {{ successMessage }}
+        </span>
+        <Link href="/cart" class="text-xs font-bold underline hover:text-white">Lihat Keranjang →</Link>
+      </div>
+
       <!-- Chapter List -->
       <section class="space-y-6">
         <h2 class="text-2xl font-bold text-white flex items-center justify-between">
@@ -136,7 +174,7 @@ const flashError = computed(() => (page.props as any).flash?.error);
           >
             <div>
               <h3 class="font-bold text-white group-hover:text-sky-400 transition">
-                {{ ch.title }}
+                Chapter {{ ch.chapter_number }}: {{ ch.title }}
               </h3>
               <p class="text-xs text-slate-400 mt-0.5">
                 Released {{ new Date(ch.published_at).toLocaleDateString() }}
@@ -157,6 +195,18 @@ const flashError = computed(() => (page.props as any).flash?.error);
                 Rp {{ ch.price ? ch.price.toLocaleString() : '5,000' }}
               </span>
 
+              <!-- Add to Cart Button for Paid Chapters -->
+              <button
+                v-if="!ch.is_free"
+                @click="handleAddToCart(ch.id)"
+                :disabled="isAdding === ch.id"
+                class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition flex items-center gap-1.5"
+              >
+                <span>🛒</span>
+                <span>{{ isAdding === ch.id ? 'Adding...' : 'Add to Cart' }}</span>
+              </button>
+
+              <!-- Read Chapter Button -->
               <Link
                 :href="`/read/${comic.slug}/${ch.chapter_number}`"
                 class="px-4 py-2 rounded-xl text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white transition shadow-md shadow-sky-600/20"
