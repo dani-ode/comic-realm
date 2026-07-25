@@ -1,8 +1,21 @@
 <script setup lang="ts">
 import { Head, useForm, Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const page = usePage();
+
+const errorMessage = ref('');
+
+const activeError = computed(() => {
+  if (errorMessage.value) return errorMessage.value;
+  if (form.errors.login) return form.errors.login;
+  if (form.errors.password) return form.errors.password;
+  const pageProps = page.props as any;
+  if (pageProps?.errors?.login) return pageProps.errors.login;
+  if (pageProps?.errors?.password) return pageProps.errors.password;
+  if (pageProps?.flash?.error) return pageProps.flash.error;
+  return '';
+});
 
 const form = useForm({
   login: '',
@@ -10,19 +23,22 @@ const form = useForm({
   remember: false,
 });
 
-const activeError = computed(() => {
-  const pageProps = page.props as any;
-  if (form.errors.login) return form.errors.login;
-  if (form.errors.password) return form.errors.password;
-  if (pageProps?.errors?.login) return pageProps.errors.login;
-  if (pageProps?.errors?.password) return pageProps.errors.password;
-  if (pageProps?.flash?.error) return pageProps.flash.error;
-  return '';
-});
-
 const submit = () => {
+  console.log('[Login.vue] Form submitted:', form.login);
+  errorMessage.value = '';
+
   form.post('/login', {
-    onFinish: () => form.reset('password'),
+    onStart: () => console.log('[Login.vue] Request sent to /login...'),
+    onSuccess: () => console.log('[Login.vue] Request successful (Redirecting...)'),
+    onError: (errors: Record<string, string>) => {
+      console.error('[Login.vue] Request returned errors:', errors);
+      const msg = errors.login || errors.password || Object.values(errors)[0] || 'Email/Username atau password yang Anda masukkan tidak sesuai.';
+      errorMessage.value = msg;
+    },
+    onFinish: () => {
+      console.log('[Login.vue] Request finished.');
+      form.reset('password');
+    },
   });
 };
 </script>
