@@ -144,10 +144,13 @@ const handleAddToCart = async (chapterId: number) => {
 
           <!-- Metrics Stat & Interactive Action Row -->
           <div class="flex flex-wrap items-center gap-6 py-3 border-y border-slate-800 text-sm">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <span class="font-bold text-amber-400 text-base flex items-center gap-1">
                 <StarIcon class="w-4 h-4 text-amber-400 fill-amber-400 shrink-0" />
                 {{ comic.rating_average ? comic.rating_average.toFixed(1) : '0.0' }}
+              </span>
+              <span class="text-xs font-semibold text-slate-400">
+                ({{ comic.total_ratings ? comic.total_ratings.toLocaleString() : 0 }} rating)
               </span>
               <StarRating :comicId="comic.id" :initialRating="userRating" />
             </div>
