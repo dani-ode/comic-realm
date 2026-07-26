@@ -8,6 +8,7 @@ import {
   BookOpenIcon,
   CalendarIcon,
   BuildingStorefrontIcon,
+  StarIcon,
 } from '@heroicons/vue/24/solid';
 
 interface Publisher {
@@ -15,6 +16,7 @@ interface Publisher {
   name: string;
   username: string;
   brand_name: string;
+  slug?: string;
   bio?: string;
   logo?: string;
   banner?: string;
@@ -43,6 +45,8 @@ defineProps<{
   publisher: Publisher;
   comics: Paginator;
   totalViews: number;
+  totalRatings: number;
+  averageRating: number;
 }>();
 </script>
 
@@ -88,14 +92,22 @@ defineProps<{
             </p>
 
             <!-- Metrics Summary Badge -->
-            <div class="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-2 text-xs font-medium">
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2 text-xs font-medium">
               <div class="bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2 flex items-center gap-2">
-                <BookOpenIcon class="w-4 h-4 text-sky-400" />
+                <StarIcon class="w-4 h-4 text-amber-400 fill-amber-400 shrink-0" />
+                <span class="text-slate-300">
+                  Studio Rating: <strong class="text-amber-400 font-extrabold text-sm">{{ averageRating ? averageRating.toFixed(1) : '0.0' }}</strong> 
+                  <span class="text-slate-400 font-semibold ml-1">({{ totalRatings ? totalRatings.toLocaleString() : 0 }} rating)</span>
+                </span>
+              </div>
+
+              <div class="bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2 flex items-center gap-2">
+                <BookOpenIcon class="w-4 h-4 text-sky-400 shrink-0" />
                 <span class="text-slate-300">Total Series: <strong class="text-white font-bold">{{ comics.total }}</strong></span>
               </div>
 
               <div class="bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2 flex items-center gap-2">
-                <EyeIcon class="w-4 h-4 text-amber-400" />
+                <EyeIcon class="w-4 h-4 text-indigo-400 shrink-0" />
                 <span class="text-slate-300">Total Views: <strong class="text-white font-bold">{{ totalViews.toLocaleString() }}</strong></span>
               </div>
             </div>

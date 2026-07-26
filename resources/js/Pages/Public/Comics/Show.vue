@@ -155,7 +155,7 @@ const handleBookmarkUpdated = (payload: { bookmarked: boolean; total_bookmarks: 
           <div class="flex flex-wrap items-center gap-6 text-sm text-slate-300 py-1">
             <span v-if="comic.publisher">
               Studio: 
-              <Link :href="`/studios/${comic.publisher.id}`" class="text-sky-400 font-bold hover:underline inline-flex items-center gap-1">
+              <Link :href="`/studios/${comic.publisher.publisher_profile?.slug || comic.publisher.id}`" class="text-sky-400 font-bold hover:underline inline-flex items-center gap-1">
                 🎨 {{ comic.publisher.publisher_profile?.brand_name || comic.publisher.name }}
               </Link>
             </span>

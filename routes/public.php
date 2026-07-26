@@ -8,4 +8,4 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/comics', [ComicController::class, 'index'])->name('comics.index');
 Route::get('/comics/{slug}', [ComicController::class, 'show'])->name('comics.show');
-Route::get('/studios/{id}', [StudioController::class, 'show'])->name('studios.show');
+Route::get('/studios/{idOrSlug}', [StudioController::class, 'show'])->name('studios.show');
