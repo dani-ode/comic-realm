@@ -17,7 +17,12 @@ class ComicController extends Controller
 {
     public function index(Request $request, ComicQuery $comicQuery): InertiaResponse
     {
-        $filters = $request->only(['search', 'genre', 'status', 'sort']);
+        $filters = [
+            'search' => $request->input('search'),
+            'genre' => $request->input('genre'),
+            'status' => $request->input('status'),
+            'sort' => $request->input('sort', 'latest'),
+        ];
 
         return Inertia::render('Public/Comics/Index', [
             'comics' => $comicQuery->getCatalogPaginator($filters),

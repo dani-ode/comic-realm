@@ -117,11 +117,11 @@ const clearFilter = (filterKey: 'genre' | 'search' | 'status' | 'all') => {
           <select
             v-model="selectedSort"
             class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium"
-          >
-            <option value="latest">Latest Release (Terbaru)</option>
-            <option value="popular">Most Views (Terpopuler)</option>
-            <option value="rating">Highest Rating (Rating Tertinggi)</option>
-            <option value="oldest">Oldest (Terlama)</option>
+          > 
+            <option value="latest">Latest Release</option>
+            <option value="popular">Most Views</option>
+            <option value="rating">Highest Rating</option>
+            <option value="oldest">Oldest</option>
           </select>
         </div>
       </div>
