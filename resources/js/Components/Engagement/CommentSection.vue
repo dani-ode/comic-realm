@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import axios from 'axios';
 
 interface Comment {
@@ -12,7 +12,7 @@ interface Comment {
 }
 
 const props = defineProps<{
-  comicId: number;
+  comicId?: number;
   chapterId?: number;
 }>();
 
@@ -24,10 +24,13 @@ const replyParentId = ref<number | null>(null);
 const replyText = ref('');
 
 const fetchComments = async () => {
+  if (!props.comicId) return;
   try {
-    const res = await axios.get('/api/comments', {
-      params: { comic_id: props.comicId, chapter_id: props.chapterId },
-    });
+    const params: Record<string, any> = { comic_id: props.comicId };
+    if (props.chapterId) {
+      params.chapter_id = props.chapterId;
+    }
+    const res = await axios.get('/api/comments', { params });
     if (res.data && res.data.data) {
       comments.value = res.data.data;
     }
@@ -40,7 +43,12 @@ onMounted(() => {
   fetchComments();
 });
 
+watch(() => [props.comicId, props.chapterId], () => {
+  fetchComments();
+});
+
 const submitComment = async (parentId: number | null = null) => {
+  if (!props.comicId) return;
   const text = parentId ? replyText.value : commentText.value;
   if (!text.trim()) return;
 
@@ -48,7 +56,7 @@ const submitComment = async (parentId: number | null = null) => {
   try {
     await axios.post('/api/comments', {
       comic_id: props.comicId,
-      chapter_id: props.chapterId,
+      chapter_id: props.chapterId || null,
       parent_id: parentId,
       comment_text: text,
       is_spoiler: isSpoiler.value,
