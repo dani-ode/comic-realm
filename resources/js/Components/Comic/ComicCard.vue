@@ -53,7 +53,7 @@ defineProps<{
     <!-- Content -->
     <div class="p-4 flex flex-col flex-1">
       <div class="flex flex-wrap gap-1 mb-2" v-if="comic.genres && comic.genres.length">
-        <GenreBadge v-for="genre in comic.genres.slice(0, 2)" :key="genre.id" :name="genre.name" />
+        <GenreBadge v-for="genre in comic.genres.slice(0, 2)" :key="genre.id" :genre="genre" />
       </div>
 
       <h3 class="text-base font-bold text-white group-hover:text-sky-400 transition line-clamp-1">

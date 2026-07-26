@@ -135,7 +135,7 @@ const handleBookmarkUpdated = (payload: { bookmarked: boolean; total_bookmarks: 
         <!-- Info Details -->
         <div class="flex-1 space-y-4">
           <div class="flex flex-wrap gap-2" v-if="comic.genres">
-            <GenreBadge v-for="g in comic.genres" :key="g.id" :name="g.name" />
+            <GenreBadge v-for="g in comic.genres" :key="g.id" :genre="g" />
           </div>
 
           <h1 class="text-3xl sm:text-5xl font-extrabold text-white leading-tight">
@@ -160,7 +160,7 @@ const handleBookmarkUpdated = (payload: { bookmarked: boolean; total_bookmarks: 
                 {{ comic.rating_average ? comic.rating_average.toFixed(1) : '0.0' }}
               </span>
               <span class="text-xs font-semibold text-slate-400">
-                ({{ comic.total_ratings ? comic.total_ratings.toLocaleString() : 0 }} rating)
+                ({{ comic.total_ratings ? comic.total_ratings.toLocaleString() : 0 }})
               </span>
               <StarRating :comicId="comic.id" :initialRating="userRating" @updated="handleRatingUpdated" />
             </div>
