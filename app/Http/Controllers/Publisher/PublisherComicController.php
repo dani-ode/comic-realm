@@ -21,7 +21,6 @@ class PublisherComicController extends Controller
 
         $profile = PublisherProfile::where('user_id', $user->id)->first();
 
-        // Jika belum mengajukan studio sama sekali, arahkan otomatis ke /publisher/apply
         if (! $profile) {
             return redirect()->route('publisher.apply');
         }
@@ -120,7 +119,8 @@ class PublisherComicController extends Controller
         $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'cover_image' => ['required', 'string', 'max:500'],
+            'cover_image' => ['required', 'string'],
+            'banner_image' => ['nullable', 'string'],
             'author_name' => ['nullable', 'string', 'max:150'],
             'artist_name' => ['nullable', 'string', 'max:150'],
             'status' => ['required', 'string'],
@@ -136,6 +136,7 @@ class PublisherComicController extends Controller
             'slug' => $slug,
             'description' => $request->input('description'),
             'cover_image' => $request->input('cover_image'),
+            'banner_image' => $request->input('banner_image'),
             'author_name' => $request->input('author_name'),
             'artist_name' => $request->input('artist_name'),
             'status' => $request->input('status', 'ongoing'),
@@ -174,7 +175,8 @@ class PublisherComicController extends Controller
         $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'cover_image' => ['nullable', 'string', 'max:500'],
+            'cover_image' => ['nullable', 'string'],
+            'banner_image' => ['nullable', 'string'],
             'author_name' => ['nullable', 'string', 'max:150'],
             'artist_name' => ['nullable', 'string', 'max:150'],
             'status' => ['required', 'string'],
@@ -185,6 +187,7 @@ class PublisherComicController extends Controller
             'title' => $request->input('title'),
             'description' => $request->input('description'),
             'cover_image' => $request->input('cover_image', $comic->cover_image),
+            'banner_image' => $request->input('banner_image', $comic->banner_image),
             'author_name' => $request->input('author_name'),
             'artist_name' => $request->input('artist_name'),
             'status' => $request->input('status'),

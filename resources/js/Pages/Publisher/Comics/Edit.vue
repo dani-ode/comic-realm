@@ -6,7 +6,7 @@ import {
   ArrowLeftIcon,
   InformationCircleIcon,
   CheckCircleIcon,
-  SwatchIcon,
+  PencilSquareIcon,
 } from '@heroicons/vue/24/outline';
 
 interface Genre {
@@ -15,24 +15,39 @@ interface Genre {
   slug: string;
 }
 
-defineProps<{
+interface Comic {
+  id: number;
+  title: string;
+  description: string;
+  cover_image: string;
+  banner_image?: string;
+  author_name?: string;
+  artist_name?: string;
+  status: string;
+  genres?: Genre[];
+}
+
+const props = defineProps<{
+  comic: Comic;
   genres: Genre[];
 }>();
 
-const coverPreview = ref<string>('');
-const bannerPreview = ref<string>('');
+const coverPreview = ref<string>(props.comic.cover_image || '');
+const bannerPreview = ref<string>(props.comic.banner_image || '');
 const originalCoverDim = ref<{ width: number; height: number } | null>(null);
 const originalBannerDim = ref<{ width: number; height: number } | null>(null);
 
+const initialGenreIds = props.comic.genres ? props.comic.genres.map((g) => g.id) : [];
+
 const form = useForm({
-  title: '',
-  description: '',
-  cover_image: '',
-  banner_image: '',
-  author_name: '',
-  artist_name: '',
-  status: 'ongoing',
-  genres: [] as number[],
+  title: props.comic.title,
+  description: props.comic.description,
+  cover_image: props.comic.cover_image,
+  banner_image: props.comic.banner_image || '',
+  author_name: props.comic.author_name || '',
+  artist_name: props.comic.artist_name || '',
+  status: props.comic.status || 'ongoing',
+  genres: initialGenreIds,
 });
 
 // Cover Image Auto-Crop (Ratio 2:3 -> 400x600 px)
@@ -128,12 +143,12 @@ const handleBannerFileSelect = (event: Event) => {
 };
 
 const submit = () => {
-  form.post('/publisher/comics');
+  form.post(`/publisher/comics/${props.comic.id}/update`);
 };
 </script>
 
 <template>
-  <Head title="Buat Serial Komik Baru - Creator Studio" />
+  <Head :title="`Edit Komik: ${comic.title} - Creator Studio`" />
 
   <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-2xl text-center">
@@ -141,15 +156,28 @@ const submit = () => {
         <ArrowLeftIcon class="w-3.5 h-3.5" /> Kembali ke Kelola Komik
       </Link>
       <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-white flex items-center justify-center gap-3">
-        <SwatchIcon class="w-8 h-8 text-sky-400" />
-        Buat Serial Komik Baru
+        <PencilSquareIcon class="w-8 h-8 text-sky-400" />
+        Edit Detail Serial Komik
       </h2>
-      <p class="text-sm text-slate-400 mt-1">Daftarkan serial webcomic baru karya studio Anda ke platform ComicRealm</p>
+      <p class="text-sm text-slate-400 mt-1">Perbarui judul, sinopsis, status terbitan, dan gambar cover/banner komik</p>
     </div>
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl">
       <div class="bg-slate-900 border border-slate-800 py-8 px-6 shadow-2xl sm:rounded-2xl sm:px-10">
         <form class="space-y-6" @submit.prevent="submit">
+          <!-- Status Komik -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300">Status Serial Komik *</label>
+            <select
+              v-model="form.status"
+              class="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-white focus:border-sky-500 focus:outline-none text-sm font-semibold"
+            >
+              <option value="ongoing">Ongoing (Sedang Berjalan)</option>
+              <option value="completed">Completed (Tamat)</option>
+              <option value="hiatus">Hiatus (Diberhentikan Sementara)</option>
+            </select>
+          </div>
+
           <!-- Judul Komik -->
           <div>
             <label class="block text-xs font-bold text-slate-300">Judul Serial Komik *</label>
@@ -158,7 +186,6 @@ const submit = () => {
               type="text"
               required
               class="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none text-sm font-semibold"
-              placeholder="Contoh: The Legend of Realm Master"
             />
           </div>
 
@@ -170,7 +197,6 @@ const submit = () => {
               rows="4"
               required
               class="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none text-sm"
-              placeholder="Tuliskan ringkasan alur cerita webcomic Anda yang menarik pembaca..."
             ></textarea>
           </div>
 
@@ -179,12 +205,10 @@ const submit = () => {
             <div class="flex items-start gap-2 text-xs text-sky-400">
               <InformationCircleIcon class="w-5 h-5 shrink-0" />
               <div>
-                <strong class="font-extrabold text-white block">Aturan & Spesifikasi Cover Komik:</strong>
-                <ul class="list-disc list-inside text-slate-400 space-y-0.5 mt-1 text-[11px]">
-                  <li>Rasio Aspek Resmi: <span class="text-sky-300 font-bold">2:3 (Vertikal / Poster)</span></li>
-                  <li>Dimensi Standar: <span class="text-sky-300 font-bold">400 x 600 px</span></li>
-                  <li><strong class="text-amber-400">Auto-Crop:</strong> Jika ukuran tidak sesuai, sistem otomatis melakukan center crop ke 400x600 px.</li>
-                </ul>
+                <strong class="font-extrabold text-white block">Aturan Cover Komik:</strong>
+                <p class="text-slate-400 text-[11px] mt-0.5">
+                  Rasio aspek resmi <strong class="text-sky-300">2:3 (400 x 600 px)</strong>. Gambar baru akan otomatis di-crop paksa jika ukuran tidak sesuai.
+                </p>
               </div>
             </div>
 
@@ -203,7 +227,7 @@ const submit = () => {
               </div>
 
               <div class="flex-1 space-y-2 w-full">
-                <label class="block text-xs font-bold text-slate-300">Pilih File Cover Komik *</label>
+                <label class="block text-xs font-bold text-slate-300">Ubah File Cover Komik</label>
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
@@ -225,12 +249,10 @@ const submit = () => {
             <div class="flex items-start gap-2 text-xs text-indigo-400">
               <InformationCircleIcon class="w-5 h-5 shrink-0" />
               <div>
-                <strong class="font-extrabold text-white block">Aturan & Spesifikasi Banner Header Komik:</strong>
-                <ul class="list-disc list-inside text-slate-400 space-y-0.5 mt-1 text-[11px]">
-                  <li>Rasio Aspek Resmi: <span class="text-indigo-300 font-bold">3:1 (Landscape Header)</span></li>
-                  <li>Dimensi Standar: <span class="text-indigo-300 font-bold">1200 x 400 px</span></li>
-                  <li><strong class="text-amber-400">Auto-Crop:</strong> Jika ukuran tidak sesuai, sistem otomatis melakukan center crop ke 1200x400 px.</li>
-                </ul>
+                <strong class="font-extrabold text-white block">Aturan Banner Header Komik:</strong>
+                <p class="text-slate-400 text-[11px] mt-0.5">
+                  Rasio aspek resmi <strong class="text-indigo-300">3:1 (1200 x 400 px)</strong>. Gambar baru akan otomatis di-crop paksa jika ukuran tidak sesuai.
+                </p>
               </div>
             </div>
 
@@ -249,7 +271,7 @@ const submit = () => {
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-slate-300 mb-1">Pilih File Banner Header Komik (Opsional)</label>
+                <label class="block text-xs font-bold text-slate-300 mb-1">Ubah File Banner Header Komik</label>
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
@@ -273,7 +295,6 @@ const submit = () => {
                 v-model="form.author_name"
                 type="text"
                 class="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-white text-xs"
-                placeholder="Contoh: Chugong"
               />
             </div>
 
@@ -283,7 +304,6 @@ const submit = () => {
                 v-model="form.artist_name"
                 type="text"
                 class="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-white text-xs"
-                placeholder="Contoh: DUBU (REDICE)"
               />
             </div>
           </div>
@@ -310,10 +330,10 @@ const submit = () => {
 
           <button
             type="submit"
-            :disabled="form.processing || !form.cover_image"
+            :disabled="form.processing"
             class="w-full flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-sky-600 hover:bg-sky-500 disabled:opacity-50 transition shadow-lg shadow-sky-600/30"
           >
-            {{ form.processing ? 'Menerbitkan Serial Komik...' : 'Terbitkan Serial Komik →' }}
+            {{ form.processing ? 'Menyimpan Perubahan...' : 'Simpan Perubahan Komik →' }}
           </button>
         </form>
       </div>
