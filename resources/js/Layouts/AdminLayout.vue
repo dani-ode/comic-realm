@@ -102,9 +102,11 @@ const submitPasswordUpdate = () => {
       <!-- Logo Header -->
       <div class="h-16 px-4 flex items-center justify-between border-b border-slate-800/80 shrink-0">
         <Link href="/" class="flex items-center gap-3 overflow-hidden">
-          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shrink-0">
-            <SwatchIcon class="w-5 h-5" />
-          </div>
+          <img
+            src="/favicon.ico"
+            alt="ComicRealm"
+            class="w-9 h-9 rounded-2xl object-contain shadow-lg shrink-0"
+          />
           <div v-if="isSidebarOpen" class="flex flex-col truncate">
             <span class="font-brand font-black text-white text-base tracking-wider uppercase">ComicRealm</span>
             <span class="text-[10px] text-sky-400 font-bold uppercase tracking-widest">Creator Studio</span>

@@ -7,8 +7,9 @@ import GenreBadge from '@/Components/Comic/GenreBadge.vue';
 import BookmarkButton from '@/Components/Engagement/BookmarkButton.vue';
 import StarRating from '@/Components/Engagement/StarRating.vue';
 import CommentSection from '@/Components/Engagement/CommentSection.vue';
-import { EyeIcon } from '@heroicons/vue/24/outline';
+import { EyeIcon, LockClosedIcon, ShoppingCartIcon, CheckBadgeIcon } from '@heroicons/vue/24/outline';
 import { StarIcon, HeartIcon as HeartIconSolid } from '@heroicons/vue/24/solid';
+import { useToast } from '@/composables/useToast';
 
 interface Genre {
   id: number;
@@ -67,11 +68,9 @@ const props = withDefaults(defineProps<{
 });
 
 const page = usePage();
-const flashError = computed(() => (page.props as any).flash?.error);
-const flashSuccess = computed(() => (page.props as any).flash?.success);
+const { success: toastSuccess, error: toastError } = useToast();
 
 const isAdding = ref<number | null>(null);
-const localSuccess = ref('');
 
 const isUnlocked = (chapterId: number, isFree: boolean) => {
   return isFree || (props.unlockedChapterIds && props.unlockedChapterIds.includes(chapterId));
@@ -88,7 +87,6 @@ const handleAddToCart = async (chapterId: number) => {
   }
 
   isAdding.value = chapterId;
-  localSuccess.value = '';
 
   try {
     const res = await axios.post('/api/cart/items', { chapter_id: chapterId });
@@ -96,17 +94,15 @@ const handleAddToCart = async (chapterId: number) => {
       if (!props.cartChapterIds.includes(chapterId)) {
         props.cartChapterIds.push(chapterId);
       }
-      localSuccess.value = res.data.message || 'Bab berhasil ditambahkan ke keranjang belanja.';
+      toastSuccess(res.data.message || 'Chapter berhasil ditambahkan ke keranjang!');
       router.reload({ only: ['cartCount', 'cartChapterIds'] });
-      setTimeout(() => {
-        localSuccess.value = '';
-      }, 5000);
     }
   } catch (err: any) {
     if (err.response && err.response.status === 401) {
-      router.get('/login');
+      toastError('Silakan login terlebih dahulu untuk membeli chapter.');
+      setTimeout(() => router.get('/login'), 1500);
     } else {
-      alert(err.response?.data?.message || 'Gagal menambahkan bab ke keranjang belanja.');
+      toastError(err.response?.data?.message || 'Gagal menambahkan chapter ke keranjang.');
     }
   } finally {
     isAdding.value = null;
@@ -157,7 +153,7 @@ const handleBookmarkUpdated = (payload: { bookmarked: boolean; total_bookmarks: 
             <span v-if="comic.publisher">
               Studio: 
               <Link :href="`/studios/${comic.publisher.publisher_profile?.slug || comic.publisher.id}`" class="text-sky-400 font-bold hover:underline inline-flex items-center gap-1">
-                🎨 {{ comic.publisher.publisher_profile?.brand_name || comic.publisher.name }}
+                {{ comic.publisher.publisher_profile?.brand_name || comic.publisher.name }}
               </Link>
             </span>
             <span>Author: <strong class="text-white">{{ comic.author_name || 'Unknown' }}</strong></span>
@@ -199,19 +195,6 @@ const handleBookmarkUpdated = (payload: { bookmarked: boolean; total_bookmarks: 
 
     <!-- Chapter List & Discussion Section -->
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-10 w-full flex-1 space-y-12">
-      <!-- Flash Error Banner -->
-      <div v-if="flashError" class="bg-red-500/10 border border-red-500/30 text-red-400 px-5 py-3.5 rounded-xl text-sm font-medium flex items-center gap-3">
-        <span class="text-lg">⚠️</span>
-        {{ flashError }}
-      </div>
-
-      <!-- Success Notification Banner -->
-      <div v-if="flashSuccess || localSuccess" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-5 py-3.5 rounded-xl text-sm font-medium flex items-center justify-between">
-        <span class="flex items-center gap-2">
-          <span>🛒</span> {{ flashSuccess || localSuccess }}
-        </span>
-        <Link href="/cart" class="text-xs font-bold underline hover:text-white">Lihat Keranjang →</Link>
-      </div>
 
       <!-- Chapter List -->
       <section class="space-y-6">
@@ -222,77 +205,86 @@ const handleBookmarkUpdated = (payload: { bookmarked: boolean; total_bookmarks: 
           </span>
         </h2>
 
-        <div v-if="comic.published_chapters && comic.published_chapters.length" class="space-y-3">
+        <div v-if="comic.published_chapters && comic.published_chapters.length" class="space-y-2.5">
           <div
             v-for="ch in comic.published_chapters"
             :key="ch.id"
-            class="bg-slate-900 border border-slate-800 hover:border-sky-500/50 rounded-xl p-4 flex items-center justify-between transition group"
+            class="bg-slate-900 border border-slate-800 hover:border-sky-500/40 rounded-xl px-5 py-4 flex items-center justify-between gap-4 transition group"
           >
-            <div>
-              <h3 class="font-bold text-white group-hover:text-sky-400 transition">
-                Chapter {{ ch.chapter_number }}: {{ ch.title }}
+            <!-- Chapter Info -->
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-white group-hover:text-sky-400 transition text-sm truncate">
+                Ch.{{ ch.chapter_number }} — {{ ch.title }}
               </h3>
-              <p class="text-xs text-slate-400 mt-0.5">
-                Released {{ new Date(ch.published_at).toLocaleDateString() }}
+              <p class="text-xs text-slate-500 mt-0.5">
+                {{ new Date(ch.published_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) }}
               </p>
             </div>
 
-            <div class="flex items-center gap-3">
-              <!-- Free Chapter Status -->
-              <span
-                v-if="ch.is_free"
-                class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-              >
-                FREE
-              </span>
+            <!-- Action Area -->
+            <div class="shrink-0 flex items-center">
 
-              <!-- Purchased / Unlocked Status -->
-              <span
-                v-else-if="isUnlocked(ch.id, ch.is_free)"
-                class="px-2.5 py-1 text-xs font-bold rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20"
-              >
-                UNLOCKED ✓
-              </span>
-
-              <!-- Paid Price Label -->
-              <span
-                v-else
-                class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20"
-              >
-                Rp {{ ch.price ? ch.price.toLocaleString() : '5,000' }}
-              </span>
-
-              <!-- Cart Button (Shown ONLY if paid AND NOT unlocked) -->
-              <template v-if="!isUnlocked(ch.id, ch.is_free)">
-                <!-- Already In Cart Button -->
-                <Link
-                  v-if="isInCart(ch.id)"
-                  href="/cart"
-                  class="px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 transition flex items-center gap-1.5"
-                >
-                  <span>🛒</span>
-                  <span>In Cart</span>
-                </Link>
-
-                <!-- Add to Cart Button -->
-                <button
-                  v-else
-                  @click="handleAddToCart(ch.id)"
-                  :disabled="isAdding === ch.id"
-                  class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition flex items-center gap-1.5"
-                >
-                  <span>🛒</span>
-                  <span>{{ isAdding === ch.id ? 'Adding...' : 'Add to Cart' }}</span>
-                </button>
+              <!-- FREE chapter -->
+              <template v-if="ch.is_free">
+                <div class="relative flex flex-col items-center gap-0.5">
+                  <span class="text-[10px] font-bold text-emerald-400 tracking-wide uppercase">Free</span>
+                  <Link
+                    :href="`/read/${comic.slug}/${ch.chapter_number}`"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-md shadow-emerald-600/20"
+                  >
+                    Read
+                  </Link>
+                </div>
               </template>
 
-              <!-- Read Chapter Button -->
-              <Link
-                :href="`/read/${comic.slug}/${ch.chapter_number}`"
-                class="px-4 py-2 rounded-xl text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white transition shadow-md shadow-sky-600/20"
-              >
-                Read
-              </Link>
+              <!-- PAID + UNLOCKED -->
+              <template v-else-if="isUnlocked(ch.id, ch.is_free)">
+                <div class="relative flex flex-col items-center gap-0.5">
+                  <span class="text-[10px] font-bold text-sky-400 tracking-wide uppercase flex items-center gap-0.5">
+                    <CheckBadgeIcon class="w-3 h-3" /> Unlocked
+                  </span>
+                  <Link
+                    :href="`/read/${comic.slug}/${ch.chapter_number}`"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white transition shadow-md shadow-sky-600/20"
+                  >
+                    Read
+                  </Link>
+                </div>
+              </template>
+
+              <!-- PAID + IN CART -->
+              <template v-else-if="isInCart(ch.id)">
+                <div class="relative flex flex-col items-center gap-0.5">
+                  <span class="text-[10px] font-bold text-amber-400 tracking-wide uppercase">
+                    Rp {{ ch.price ? ch.price.toLocaleString('id-ID') : '5.000' }}
+                  </span>
+                  <Link
+                    href="/cart"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition flex items-center gap-1.5"
+                  >
+                    <ShoppingCartIcon class="w-3.5 h-3.5" />
+                    In Cart
+                  </Link>
+                </div>
+              </template>
+
+              <!-- PAID + LOCKED -->
+              <template v-else>
+                <div class="relative flex flex-col items-center gap-0.5">
+                  <span class="text-[10px] font-bold text-slate-400 tracking-wide uppercase">
+                    Rp {{ ch.price ? ch.price.toLocaleString('id-ID') : '5.000' }}
+                  </span>
+                  <button
+                    @click="handleAddToCart(ch.id)"
+                    :disabled="isAdding === ch.id"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 border border-slate-700 hover:border-amber-500/40 transition flex items-center gap-1.5 disabled:opacity-60"
+                  >
+                    <LockClosedIcon class="w-3.5 h-3.5" />
+                    {{ isAdding === ch.id ? 'Adding...' : 'Add to Cart' }}
+                  </button>
+                </div>
+              </template>
+
             </div>
           </div>
         </div>

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Link, usePage, router } from "@inertiajs/vue3";
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, watch } from "vue";
+import { useToast } from "@/composables/useToast";
+import ToastContainer from "@/Components/UI/ToastContainer.vue";
 import {
     BookOpenIcon,
     ShoppingCartIcon,
@@ -40,21 +42,36 @@ onMounted(() => {
 onUnmounted(() => {
     window.removeEventListener("click", closeDropdown);
 });
+
+const { success, error } = useToast();
+
+// Watch Inertia flash messages and display as toasts
+watch(
+    () => (page.props as any).flash,
+    (flash) => {
+        if (flash?.success) success(flash.success);
+        if (flash?.error) error(flash.error);
+    },
+    { deep: true, immediate: true },
+);
 </script>
 
 <template>
     <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+        <!-- Global Toast Notifications -->
+        <ToastContainer />
+
         <!-- Navbar -->
         <header
             class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 flex items-center justify-between"
         >
             <!-- Logo -->
             <Link href="/" class="flex items-center gap-2">
-                <div
-                    class="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-sky-500/20"
-                >
-                    <SwatchIcon class="w-4 h-4 text-white" />
-                </div>
+                <img
+                    src="/favicon.ico"
+                    alt="ComicRealm"
+                    class="w-8 h-8 rounded-2xl object-contain shadow-lg shadow-sky-500/20"
+                />
                 <span
                     class="font-brand text-[21px] font-extrabold bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent tracking-wide"
                 >
@@ -275,13 +292,8 @@ onUnmounted(() => {
                 <div v-else class="flex items-center gap-2">
                     <Link
                         href="/login"
-                        class="text-xs font-semibold px-3 py-1.5 text-slate-300 hover:text-white"
-                        >Sign In</Link
-                    >
-                    <Link
-                        href="/register"
                         class="text-xs font-bold px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white transition"
-                        >Register</Link
+                        >Sign In</Link
                     >
                 </div>
             </div>
@@ -301,6 +313,7 @@ onUnmounted(() => {
                 Monetization Platform
             </p>
             <div class="flex justify-center gap-4 text-slate-400">
+                <link rel="icon" href="/favicon.ico" type="image/x-icon" />
                 <Link href="/comics" class="hover:underline"
                     >Browse Comics</Link
                 >

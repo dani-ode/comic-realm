@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { Head, useForm, Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, useForm, Link, router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import axios from 'axios';
 import {
   PhotoIcon,
   ArrowLeftIcon,
   InformationCircleIcon,
   CheckCircleIcon,
   SwatchIcon,
+  PlusIcon,
+  XMarkIcon,
 } from '@heroicons/vue/24/outline';
 
 interface Genre {
@@ -15,7 +18,7 @@ interface Genre {
   slug: string;
 }
 
-defineProps<{
+const props = defineProps<{
   genres: Genre[];
 }>();
 
@@ -125,6 +128,47 @@ const handleBannerFileSelect = (event: Event) => {
     img.src = e.target?.result as string;
   };
   reader.readAsDataURL(file);
+};
+
+// Max 3 genres
+const MAX_GENRES = 3;
+const genreList = ref<Genre[]>(props.genres);
+
+const canAddMoreGenres = computed(() => form.genres.length < MAX_GENRES);
+
+const toggleGenre = (id: number) => {
+  const idx = form.genres.indexOf(id);
+  if (idx >= 0) {
+    form.genres.splice(idx, 1);
+  } else if (form.genres.length < MAX_GENRES) {
+    form.genres.push(id);
+  }
+};
+
+// Create new genre inline
+const newGenreName = ref('');
+const isCreatingGenre = ref(false);
+const genreError = ref('');
+
+const createGenre = async () => {
+  const name = newGenreName.value.trim();
+  if (!name) return;
+  isCreatingGenre.value = true;
+  genreError.value = '';
+  try {
+    const res = await axios.post('/publisher/genres', { name });
+    if (res.data?.genre) {
+      genreList.value.push(res.data.genre);
+      if (form.genres.length < MAX_GENRES) {
+        form.genres.push(res.data.genre.id);
+      }
+      newGenreName.value = '';
+    }
+  } catch (err: any) {
+    genreError.value = err.response?.data?.message || 'Gagal membuat genre baru.';
+  } finally {
+    isCreatingGenre.value = false;
+  }
 };
 
 const submit = () => {
@@ -290,22 +334,56 @@ const submit = () => {
 
           <!-- Genres -->
           <div>
-            <label class="block text-xs font-bold text-slate-300 mb-2">Pilih Genre Komik *</label>
-            <div class="flex flex-wrap gap-2">
-              <label
-                v-for="g in genres"
-                :key="g.id"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs cursor-pointer select-none hover:border-slate-700 transition"
-              >
-                <input
-                  type="checkbox"
-                  :value="g.id"
-                  v-model="form.genres"
-                  class="rounded bg-slate-900 border-slate-800 text-sky-600 focus:ring-sky-500"
-                />
-                <span class="text-slate-300 font-semibold">{{ g.name }}</span>
-              </label>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-bold text-slate-300">Pilih Genre Komik * <span class="text-slate-500 font-normal">(maksimal {{ MAX_GENRES }})</span></label>
+              <span class="text-xs font-bold" :class="form.genres.length >= MAX_GENRES ? 'text-amber-400' : 'text-slate-500'">
+                {{ form.genres.length }}/{{ MAX_GENRES }}
+              </span>
             </div>
+
+            <!-- Genre Chips -->
+            <div class="flex flex-wrap gap-2 mb-3">
+              <button
+                v-for="g in genreList"
+                :key="g.id"
+                type="button"
+                @click="toggleGenre(g.id)"
+                :disabled="!form.genres.includes(g.id) && !canAddMoreGenres"
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition select-none"
+                :class="form.genres.includes(g.id)
+                  ? 'bg-sky-600 border-sky-500 text-white'
+                  : canAddMoreGenres
+                    ? 'bg-slate-950 border-slate-700 text-slate-300 hover:border-slate-600'
+                    : 'bg-slate-950 border-slate-800 text-slate-600 cursor-not-allowed opacity-50'
+                "
+              >
+                {{ g.name }}
+              </button>
+            </div>
+
+            <!-- Create New Genre -->
+            <div class="flex items-center gap-2 mt-1">
+              <input
+                v-model="newGenreName"
+                type="text"
+                placeholder="Nama genre baru..."
+                class="flex-1 rounded-xl bg-slate-950 border border-slate-800 px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                @keyup.enter="createGenre"
+              />
+              <button
+                type="button"
+                @click="createGenre"
+                :disabled="!newGenreName.trim() || isCreatingGenre"
+                class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition disabled:opacity-50"
+              >
+                <PlusIcon class="w-3.5 h-3.5" />
+                {{ isCreatingGenre ? 'Membuat...' : 'Buat Genre' }}
+              </button>
+            </div>
+            <p v-if="genreError" class="text-xs text-rose-400 mt-1">{{ genreError }}</p>
+            <p v-if="form.genres.length >= MAX_GENRES" class="text-xs text-amber-400 mt-1">
+              Maksimal {{ MAX_GENRES }} genre sudah dipilih.
+            </p>
           </div>
 
           <button

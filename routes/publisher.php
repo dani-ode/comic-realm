@@ -3,6 +3,7 @@
 use App\Http\Controllers\Publisher\PublisherApplicationController;
 use App\Http\Controllers\Publisher\PublisherChapterController;
 use App\Http\Controllers\Publisher\PublisherComicController;
+use App\Http\Controllers\Publisher\PublisherGenreController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
@@ -13,6 +14,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('auth')->group(function () {
         Route::get('/publisher/dashboard', [PublisherComicController::class, 'dashboard'])->name('publisher.dashboard');
         Route::get('/publisher/profile', [PublisherApplicationController::class, 'editProfile'])->name('publisher.profile.edit');
+        Route::post('/publisher/genres', [PublisherGenreController::class, 'store'])->name('publisher.genres.store');
         Route::get('/publisher/comics', [PublisherComicController::class, 'index'])->name('publisher.comics.index');
         Route::get('/publisher/comics/create', [PublisherComicController::class, 'create'])->name('publisher.comics.create');
         Route::post('/publisher/comics', [PublisherComicController::class, 'store'])->name('publisher.comics.store');

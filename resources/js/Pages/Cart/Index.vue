@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import axios from 'axios';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
+import { ShoppingCartIcon } from '@heroicons/vue/24/outline';
 
 interface CartItem {
   id: number;
@@ -77,7 +78,10 @@ const proceedToCheckout = () => {
     <main class="max-w-5xl mx-auto px-4 lg:px-8 py-10 w-full flex-1 space-y-8">
       <div>
         <h1 class="text-3xl font-extrabold text-white flex items-center gap-3">
-          🛒 Shopping Cart
+          <span class="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center shrink-0">
+            <ShoppingCartIcon class="w-5 h-5 text-sky-400" />
+          </span>
+          Shopping Cart
         </h1>
         <p class="text-sm text-slate-400 mt-1">Review your selected comic chapters before checkout</p>
       </div>
@@ -158,7 +162,9 @@ const proceedToCheckout = () => {
 
       <!-- Empty Cart State -->
       <div v-else class="bg-slate-900/40 border border-slate-800 rounded-2xl p-16 text-center space-y-4">
-        <div class="text-5xl">🛒</div>
+        <div class="w-16 h-16 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-center mx-auto">
+          <ShoppingCartIcon class="w-8 h-8 text-slate-500" />
+        </div>
         <h2 class="text-xl font-bold text-white">Your Cart is Empty</h2>
         <p class="text-sm text-slate-400 max-w-md mx-auto">
           Explore our comic catalog and add paid webcomic chapters to your shopping cart to continue.

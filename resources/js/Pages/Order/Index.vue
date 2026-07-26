@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
+import { CreditCardIcon, BookOpenIcon, CheckCircleIcon, ExclamationTriangleIcon, DocumentTextIcon } from '@heroicons/vue/24/outline';
 import { computed } from 'vue';
 
 const page = usePage();
@@ -73,23 +74,26 @@ const cancelOrder = (orderNumber: string) => {
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
           <h1 class="text-2xl font-bold text-white flex items-center gap-2">
-            <span>💳</span> My Orders & Transactions
+            <span class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center shrink-0">
+              <CreditCardIcon class="w-5 h-5 text-indigo-400" />
+            </span>
+            My Orders & Transactions
           </h1>
           <p class="text-sm text-slate-400 mt-1">
             Riwayat transaksi pembelian bab komik dan status pembayaran Anda.
           </p>
         </div>
         <Link href="/comics" class="inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition">
-          <span>📚</span> Browse Comics
+          <BookOpenIcon class="w-3.5 h-3.5" /> Browse Comics
         </Link>
       </div>
 
       <!-- Flash Messages -->
-      <div v-if="flashSuccess" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-400 text-xs font-medium">
-        ✅ {{ flashSuccess }}
+      <div v-if="flashSuccess" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-400 text-xs font-medium flex items-center gap-2">
+        <CheckCircleIcon class="w-4 h-4 shrink-0" /> {{ flashSuccess }}
       </div>
-      <div v-if="flashError" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-xs font-medium">
-        ⚠️ {{ flashError }}
+      <div v-if="flashError" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-xs font-medium flex items-center gap-2">
+        <ExclamationTriangleIcon class="w-4 h-4 shrink-0" /> {{ flashError }}
       </div>
 
       <!-- Orders List -->
@@ -121,8 +125,8 @@ const cancelOrder = (orderNumber: string) => {
               class="flex items-center justify-between text-xs py-1"
             >
               <div class="flex items-center gap-3">
-                <div class="w-8 h-10 bg-slate-950 rounded border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center text-[10px] text-slate-500">
-                  📖
+                <div class="w-8 h-10 bg-slate-950 rounded border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
+                  <DocumentTextIcon class="w-4 h-4 text-slate-600" />
                 </div>
                 <div>
                   <p class="font-medium text-slate-200">{{ item.title_snapshot }}</p>
@@ -182,8 +186,8 @@ const cancelOrder = (orderNumber: string) => {
 
       <!-- Empty State -->
       <div v-else class="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center space-y-4">
-        <div class="w-16 h-16 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center text-3xl mx-auto">
-          💳
+        <div class="w-16 h-16 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center mx-auto">
+          <CreditCardIcon class="w-8 h-8 text-slate-500" />
         </div>
         <div class="space-y-1">
           <h2 class="text-lg font-bold text-white">Belum Ada Transaksi</h2>

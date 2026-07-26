@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import { EyeIcon } from '@heroicons/vue/24/outline';
-import { StarIcon } from '@heroicons/vue/24/solid';
+import { StarIcon, HeartIcon as HeartSolidIcon } from '@heroicons/vue/24/solid';
 import GenreBadge from './GenreBadge.vue';
 
 interface Genre {
@@ -24,15 +25,22 @@ interface Comic {
   };
 }
 
-defineProps<{
+const props = defineProps<{
   comic: Comic;
 }>();
+
+const page = usePage();
+
+const isBookmarked = computed(() => {
+  const ids = (page.props as any).bookmarkedComicIds as number[] | undefined;
+  return ids ? ids.includes(props.comic.id) : false;
+});
 </script>
 
 <template>
-  <div class="group relative bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg hover:border-sky-500/50 transition duration-300 flex flex-col">
-    <!-- Image Cover -->
-    <div class="relative aspect-[2/3] w-full overflow-hidden bg-slate-950">
+  <div class="group relative bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg hover:border-sky-500/50 transition duration-300 flex flex-col h-full w-full">
+    <!-- Image Cover — clicking goes to comic page -->
+    <Link :href="`/comics/${comic.slug}`" class="relative aspect-[2/3] w-full overflow-hidden bg-slate-950 block shrink-0">
       <img
         :src="comic.cover_image"
         :alt="comic.title"
@@ -40,37 +48,46 @@ defineProps<{
         loading="lazy"
       />
       <!-- Rating Badge -->
-      <div class="absolute top-2.5 right-2.5 bg-slate-950/80 backdrop-blur-md text-amber-400 font-bold text-xs px-2.5 py-1 rounded-full border border-amber-400/30 flex items-center gap-1">
-        <StarIcon class="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
+      <div class="absolute top-2 right-2 bg-slate-950/80 backdrop-blur-md text-amber-400 font-bold text-[10px] px-2 py-0.5 rounded-full border border-amber-400/30 flex items-center gap-0.5">
+        <StarIcon class="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
         <span>{{ comic.rating_average ? comic.rating_average.toFixed(1) : '0.0' }}</span>
       </div>
+      <!-- Bookmark Badge -->
+      <div
+        v-if="isBookmarked"
+        class="absolute top-2 left-2 bg-rose-500/90 backdrop-blur-md text-white text-[10px] px-1.5 py-0.5 rounded-full border border-rose-400/50 flex items-center gap-0.5 shadow-lg shadow-rose-500/30"
+        title="Bookmarked"
+      >
+        <HeartSolidIcon class="w-3 h-3 text-white fill-white shrink-0" />
+      </div>
       <!-- Status Badge -->
-      <div class="absolute bottom-2.5 left-2.5 bg-slate-950/80 backdrop-blur-md text-slate-300 text-xs px-2.5 py-1 rounded-md border border-slate-700 capitalize">
+      <div class="absolute bottom-2 left-2 bg-slate-950/80 backdrop-blur-md text-slate-300 text-[10px] px-2 py-0.5 rounded-md border border-slate-700 capitalize">
         {{ comic.status }}
       </div>
-    </div>
+    </Link>
 
     <!-- Content -->
-    <div class="p-4 flex flex-col flex-1">
-      <div class="flex flex-wrap gap-1 mb-2" v-if="comic.genres && comic.genres.length">
-        <GenreBadge v-for="genre in comic.genres.slice(0, 2)" :key="genre.id" :genre="genre" />
+    <div class="p-2.5 flex flex-col flex-1">
+      <!-- Genre badges — smaller for mobile -->
+      <div class="flex flex-wrap gap-1 mb-1 min-h-[16px] items-center" v-if="comic.genres && comic.genres.length">
+        <span
+          v-for="genre in comic.genres.slice(0, 2)"
+          :key="genre.id"
+          class="text-[8px] sm:text-[9px] font-semibold px-1 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20 leading-none"
+        >
+          {{ genre.name }}
+        </span>
       </div>
 
-      <h3 class="text-base font-bold text-white group-hover:text-sky-400 transition line-clamp-1">
-        <Link :href="`/comics/${comic.slug}`">
-          {{ comic.title }}
-        </Link>
+      <!-- Title — smaller, link whole title -->
+      <h3 class="text-xs font-bold text-white group-hover:text-sky-400 transition line-clamp-2 leading-snug">
+        <Link :href="`/comics/${comic.slug}`">{{ comic.title }}</Link>
       </h3>
 
-      <p class="text-xs text-slate-400 mt-1" v-if="comic.publisher">
-        By {{ comic.publisher.name }}
-      </p>
-
-      <div class="mt-auto pt-3 flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/80">
-        <span class="flex items-center"><EyeIcon class="w-4 h-4 mr-1" /> {{ comic.total_views ? comic.total_views.toLocaleString() : 0 }} Views</span>
-        <Link :href="`/comics/${comic.slug}`" class="text-sky-400 font-medium hover:underline">
-          Read Now →
-        </Link>
+      <!-- Views -->
+      <div class="mt-auto pt-2 flex items-center text-[10px] text-slate-500">
+        <EyeIcon class="w-3 h-3 mr-0.5" />
+        {{ comic.total_views ? comic.total_views.toLocaleString() : 0 }}
       </div>
     </div>
   </div>

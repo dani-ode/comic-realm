@@ -53,7 +53,7 @@ const applyFilters = () => {
     search: search.value || undefined,
     genre: selectedGenre.value || undefined,
     status: selectedStatus.value || undefined,
-    sort: selectedSort.value || undefined,
+    sort: typeof selectedSort.value === 'string' ? selectedSort.value : undefined,
   }, { preserveState: true, replace: true });
 };
 

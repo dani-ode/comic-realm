@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
+import { BookOpenIcon, InboxIcon } from '@heroicons/vue/24/outline';
 
 interface Entitlement {
   id: number;
@@ -35,7 +36,10 @@ defineProps<{
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-10 w-full flex-1 space-y-8">
       <div>
         <h1 class="text-3xl font-extrabold text-white flex items-center gap-3">
-          📚 My Library
+          <span class="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center shrink-0">
+            <BookOpenIcon class="w-5 h-5 text-sky-400" />
+          </span>
+          My Library
         </h1>
         <p class="text-sm text-slate-400 mt-1">All your purchased webcomic chapters and digital entitlements</p>
       </div>
@@ -74,7 +78,9 @@ defineProps<{
       </div>
 
       <div v-else class="bg-slate-900/40 border border-slate-800 rounded-2xl p-16 text-center space-y-4">
-        <div class="text-5xl">📖</div>
+        <div class="w-16 h-16 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-center mx-auto">
+          <InboxIcon class="w-8 h-8 text-slate-500" />
+        </div>
         <h2 class="text-xl font-bold text-white">Your Library is Empty</h2>
         <p class="text-sm text-slate-400 max-w-md mx-auto">
           Purchased webcomic chapters will automatically appear here once your payment is confirmed.

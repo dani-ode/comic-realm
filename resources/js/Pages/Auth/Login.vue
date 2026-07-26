@@ -2,6 +2,8 @@
 import { Head, useForm, Link, usePage } from "@inertiajs/vue3";
 import { ExclamationTriangleIcon, KeyIcon, ClipboardDocumentIcon } from '@heroicons/vue/24/outline';
 import { computed, ref } from "vue";
+import { useToast } from "@/composables/useToast";
+import ToastContainer from "@/Components/UI/ToastContainer.vue";
 
 const page = usePage();
 
@@ -24,6 +26,8 @@ const form = useForm({
     remember: false,
 });
 
+const { error: toastError } = useToast();
+
 const submit = (e?: Event) => {
     if (e) e.preventDefault();
     console.log("[Login.vue] Form submitted via Inertia AJAX:", form.login);
@@ -42,7 +46,7 @@ const submit = (e?: Event) => {
                 Object.values(errors)[0] ||
                 "Email/Username atau password yang Anda masukkan tidak sesuai.";
             errorMessage.value = msg;
-            alert("⚠️ Sign In Failed:\n" + msg);
+            toastError(msg);
         },
         onFinish: () => {
             console.log("[Login.vue] Inertia POST finished.");
@@ -62,6 +66,9 @@ function copyToClipboard(email: string) {
 
 <template>
     <Head title="Sign In" />
+
+    <!-- Toast for login errors -->
+    <ToastContainer />
 
     <div
         class="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8"
