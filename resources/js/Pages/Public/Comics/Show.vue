@@ -104,6 +104,8 @@ const handleAddToCart = async (chapterId: number) => {
   } finally {
     isAdding.value = null;
   }
+};
+
 const handleRatingUpdated = (payload: { user_rating: number; rating_average: number; total_ratings: number }) => {
   props.comic.rating_average = payload.rating_average;
   props.comic.total_ratings = payload.total_ratings;
