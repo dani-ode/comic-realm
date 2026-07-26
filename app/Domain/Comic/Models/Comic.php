@@ -72,13 +72,13 @@ class Comic extends Model
 
     public function chapters(): HasMany
     {
-        return $this->hasMany(Chapter::class)->orderBy('chapter_number', 'asc');
+        return $this->hasMany(Chapter::class)->orderBy('chapter_number', 'desc');
     }
 
     public function publishedChapters(): HasMany
     {
         return $this->hasMany(Chapter::class)
             ->where('status', 'published')
-            ->orderBy('chapter_number', 'asc');
+            ->orderBy('chapter_number', 'desc');
     }
 }
