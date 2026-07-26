@@ -8,34 +8,45 @@ const props = defineProps<{
   genre?: {
     name: string;
     slug?: string;
-  };
+  } | string;
   clickable?: boolean;
 }>();
 
-const genreName = computed(() => props.genre ? props.genre.name : (props.name || ''));
+const genreName = computed(() => {
+  if (typeof props.genre === 'object' && props.genre !== null && props.genre.name) {
+    return props.genre.name;
+  }
+  if (typeof props.genre === 'string') {
+    return props.genre;
+  }
+  return props.name || '';
+});
+
 const genreSlug = computed(() => {
-  if (props.genre?.slug) return props.genre.slug;
-  if (props.slug) return props.slug;
-  if (genreName.value) return genreName.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  if (typeof props.genre === 'object' && props.genre !== null && props.genre.slug) {
+    return props.genre.slug;
+  }
+  if (props.slug) {
+    return props.slug;
+  }
+  if (genreName.value) {
+    return genreName.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  }
   return '';
 });
 
-const isClickable = computed(() => props.clickable !== false);
+const targetUrl = computed(() => {
+  const s = genreSlug.value;
+  return s ? `/comics?genre=${encodeURIComponent(s)}` : '/comics';
+});
 </script>
 
 <template>
   <Link
-    v-if="isClickable && genreSlug"
-    :href="`/comics?genre=${genreSlug}`"
+    :href="targetUrl"
     @click.stop
     class="inline-block px-3 py-1.5 text-xs font-semibold rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 hover:border-sky-500/40 hover:scale-105 transition shadow-sm whitespace-nowrap cursor-pointer relative z-20"
   >
     {{ genreName }}
   </Link>
-  <span
-    v-else
-    class="inline-block px-3 py-1.5 text-xs font-semibold rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 whitespace-nowrap"
-  >
-    {{ genreName }}
-  </span>
 </template>
