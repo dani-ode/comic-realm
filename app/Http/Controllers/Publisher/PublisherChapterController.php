@@ -30,8 +30,13 @@ class PublisherChapterController extends Controller
             ->where('publisher_id', $user->id)
             ->firstOrFail();
 
+        $latestChapter = Chapter::where('comic_id', $comic->id)
+            ->orderBy('chapter_number', 'desc')
+            ->first();
+
         return Inertia::render('Publisher/Chapters/Create', [
             'comic' => $comic,
+            'latestChapter' => $latestChapter,
         ]);
     }
 

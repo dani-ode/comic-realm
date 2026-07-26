@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm, Link } from '@inertiajs/vue3';
+import { BookmarkIcon, SparklesIcon, InformationCircleIcon } from '@heroicons/vue/24/outline';
 
 interface Comic {
   id: number;
@@ -7,13 +8,24 @@ interface Comic {
   slug: string;
 }
 
+interface LatestChapter {
+  id: number;
+  title: string;
+  chapter_number: number;
+}
+
 const props = defineProps<{
   comic: Comic;
+  latestChapter?: LatestChapter | null;
 }>();
+
+const nextChapterNumber = props.latestChapter
+  ? Number((props.latestChapter.chapter_number + 1).toFixed(1))
+  : 1.0;
 
 const form = useForm({
   title: '',
-  chapter_number: 1.0,
+  chapter_number: nextChapterNumber,
   is_free: true,
   price: 0,
   pages: [] as File[],
@@ -36,12 +48,31 @@ const submit = () => {
 
   <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-2xl text-center">
-      <Link href="/publisher/dashboard" class="text-xs font-semibold text-sky-400">← Back to Dashboard</Link>
+      <Link href="/publisher/dashboard" class="text-xs font-semibold text-sky-400 hover:underline">← Back to Dashboard</Link>
       <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-white">Publish New Chapter</h2>
       <p class="text-sm text-slate-400 mt-1">Series: <strong class="text-white">{{ comic.title }}</strong></p>
     </div>
 
-    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl">
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl space-y-4">
+      <!-- Informasi Chapter Terakhir -->
+      <div v-if="latestChapter" class="bg-slate-900 border border-sky-500/30 p-4 rounded-2xl flex items-center justify-between gap-4 shadow-lg shadow-sky-950/20">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 font-extrabold flex items-center justify-center text-sm shrink-0">
+            #{{ latestChapter.chapter_number }}
+          </div>
+          <div>
+            <span class="text-[10px] font-extrabold uppercase text-sky-400 tracking-wider flex items-center gap-1">
+              <InformationCircleIcon class="w-3.5 h-3.5" /> Chapter Terakhir Terbit
+            </span>
+            <h4 class="text-sm font-bold text-white">Bab {{ latestChapter.chapter_number }}: {{ latestChapter.title }}</h4>
+          </div>
+        </div>
+        <div class="text-right hidden sm:block">
+          <span class="text-[10px] text-slate-400 uppercase font-semibold">Rekomendasi Bab Baru</span>
+          <p class="text-xs font-extrabold text-amber-400">Bab {{ nextChapterNumber }}</p>
+        </div>
+      </div>
+
       <div class="bg-slate-900 border border-slate-800 py-8 px-6 shadow-xl sm:rounded-2xl sm:px-10">
         <form class="space-y-5" @submit.prevent="submit">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -52,7 +83,7 @@ const submit = () => {
                 type="number"
                 step="0.1"
                 required
-                class="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-white text-sm"
+                class="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-white font-mono font-bold text-sm focus:outline-none focus:border-sky-500"
                 placeholder="1.0"
               />
             </div>
@@ -63,8 +94,8 @@ const submit = () => {
                 v-model="form.title"
                 type="text"
                 required
-                class="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-white text-sm"
-                placeholder="Chapter 1: The Awakening"
+                class="mt-1 block w-full rounded-xl bg-slate-950 border border-slate-800 px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-500"
+                placeholder="misal: Pertarungan Sengit di Kota"
               />
             </div>
           </div>
