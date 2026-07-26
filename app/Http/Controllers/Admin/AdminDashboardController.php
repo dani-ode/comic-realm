@@ -7,6 +7,7 @@ use App\Domain\Comic\Models\Comic;
 use App\Domain\Order\Models\Order;
 use App\Domain\Payment\Models\Payment;
 use App\Domain\Publisher\Models\PublisherProfile;
+use App\Domain\User\Models\User;
 use App\Http\Controllers\Controller;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -20,6 +21,7 @@ class AdminDashboardController extends Controller
         $totalPublishers = PublisherProfile::where('verification_status', 'approved')->count();
         $totalComics = Comic::count();
         $totalChapters = Chapter::count();
+        $totalUsers = User::count();
 
         $recentPayments = Payment::with(['order', 'user'])
             ->latest()
@@ -33,6 +35,7 @@ class AdminDashboardController extends Controller
                 'total_publishers' => $totalPublishers,
                 'total_comics' => $totalComics,
                 'total_chapters' => $totalChapters,
+                'total_users' => $totalUsers,
             ],
             'recentPayments' => $recentPayments,
         ]);

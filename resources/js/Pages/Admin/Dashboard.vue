@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import {
+  BuildingOffice2Icon,
+  UsersIcon,
+  CreditCardIcon,
+  ArrowRightIcon,
+  BanknotesIcon,
+  ShoppingBagIcon,
+  BookOpenIcon,
+  DocumentTextIcon,
+} from '@heroicons/vue/24/outline';
 
 interface Metrics {
   total_gmv: number;
@@ -8,6 +18,7 @@ interface Metrics {
   total_publishers: number;
   total_comics: number;
   total_chapters: number;
+  total_users?: number;
 }
 
 interface Payment {
@@ -35,57 +46,102 @@ defineProps<{
       <div>
         <span class="text-xs text-amber-400 font-bold uppercase tracking-wider">Super Admin Control</span>
         <h1 class="text-3xl font-extrabold text-white">Platform Overview & Metrics</h1>
-        <p class="text-sm text-slate-400 mt-1">Real-time GMV sales volume, active creators, and TriPay payment transactions</p>
+        <p class="text-sm text-slate-400 mt-1">Real-time GMV sales volume, creator studios, users, and transactions</p>
       </div>
 
-      <!-- Stat Metrics Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 space-y-2 shadow-xl">
-          <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Sales GMV</span>
-          <div class="text-3xl font-extrabold text-emerald-400">
+      <!-- Metric Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <!-- GMV -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 space-y-3 shadow-xl">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Sales GMV</span>
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+              <BanknotesIcon class="w-4 h-4 text-emerald-400" />
+            </div>
+          </div>
+          <div class="text-2xl font-extrabold text-emerald-400">
             Rp {{ metrics.total_gmv ? metrics.total_gmv.toLocaleString() : '0' }}
           </div>
           <p class="text-xs text-slate-500">Gross Merchandise Value</p>
         </div>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-2">
-          <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Orders</span>
-          <div class="text-3xl font-extrabold text-white">
-            {{ metrics.total_orders }}
+        <!-- Orders -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Orders</span>
+            <div class="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center">
+              <ShoppingBagIcon class="w-4 h-4 text-slate-300" />
+            </div>
           </div>
+          <div class="text-2xl font-extrabold text-white">{{ metrics.total_orders }}</div>
           <p class="text-xs text-slate-500">Checkout invoices</p>
         </div>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-2">
-          <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Approved Publishers</span>
-          <div class="text-3xl font-extrabold text-sky-400">
-            {{ metrics.total_publishers }}
+        <!-- Studios -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Active Studios</span>
+            <div class="w-8 h-8 rounded-xl bg-sky-500/10 flex items-center justify-center">
+              <BuildingOffice2Icon class="w-4 h-4 text-sky-400" />
+            </div>
           </div>
-          <p class="text-xs text-slate-500">Creator studios</p>
+          <div class="text-2xl font-extrabold text-sky-400">{{ metrics.total_publishers }}</div>
+          <p class="text-xs text-slate-500">Approved publishers</p>
         </div>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-2">
-          <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Webcomics</span>
-          <div class="text-3xl font-extrabold text-purple-400">
-            {{ metrics.total_comics }}
+        <!-- Users -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Registered Users</span>
+            <div class="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <UsersIcon class="w-4 h-4 text-amber-400" />
+            </div>
           </div>
-          <p class="text-xs text-slate-500">{{ metrics.total_chapters }} Chapters published</p>
+          <div class="text-2xl font-extrabold text-amber-400">{{ metrics.total_users || 0 }}</div>
+          <p class="text-xs text-slate-500">Platform accounts</p>
+        </div>
+
+        <!-- Comics -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Webcomics</span>
+            <div class="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center">
+              <BookOpenIcon class="w-4 h-4 text-purple-400" />
+            </div>
+          </div>
+          <div class="text-2xl font-extrabold text-purple-400">{{ metrics.total_comics }}</div>
+          <p class="text-xs text-slate-500 flex items-center gap-1">
+            <DocumentTextIcon class="w-3.5 h-3.5" />
+            {{ metrics.total_chapters }} Chapters
+          </p>
         </div>
       </div>
 
-      <!-- Quick Nav Action Buttons -->
-      <div class="flex items-center gap-4">
-        <Link href="/admin/publishers" class="px-5 py-3 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 hover:text-white transition">
-          👥 Manage Publisher Applications →
+      <!-- Quick Nav -->
+      <div class="flex flex-wrap items-center gap-3">
+        <Link href="/admin/publishers" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 hover:text-amber-400 hover:border-amber-500/50 transition">
+          <BuildingOffice2Icon class="w-4 h-4" />
+          Kelola Studio Publisher
+          <ArrowRightIcon class="w-3.5 h-3.5" />
         </Link>
-        <Link href="/admin/transactions" class="px-5 py-3 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 hover:text-white transition">
-          💳 TriPay Transactions & Payouts →
+        <Link href="/admin/users" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 hover:text-amber-400 hover:border-amber-500/50 transition">
+          <UsersIcon class="w-4 h-4" />
+          Kelola User & Akses
+          <ArrowRightIcon class="w-3.5 h-3.5" />
+        </Link>
+        <Link href="/admin/transactions" class="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold bg-slate-900 border border-slate-800 text-slate-200 hover:text-amber-400 hover:border-amber-500/50 transition">
+          <CreditCardIcon class="w-4 h-4" />
+          Transaksi & Payouts
+          <ArrowRightIcon class="w-3.5 h-3.5" />
         </Link>
       </div>
 
-      <!-- Recent Payments Monitor -->
+      <!-- Recent Payments -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-        <h2 class="text-lg font-bold text-white border-b border-slate-800 pb-3">Recent TriPay Payment Transactions</h2>
+        <h2 class="text-base font-bold text-white border-b border-slate-800 pb-3 flex items-center gap-2">
+          <CreditCardIcon class="w-4 h-4 text-slate-400" />
+          Recent TriPay Payment Transactions
+        </h2>
 
         <div v-if="recentPayments && recentPayments.length" class="overflow-x-auto">
           <table class="w-full text-left text-sm text-slate-300">

@@ -7,6 +7,8 @@ import GenreBadge from '@/Components/Comic/GenreBadge.vue';
 import BookmarkButton from '@/Components/Engagement/BookmarkButton.vue';
 import StarRating from '@/Components/Engagement/StarRating.vue';
 import CommentSection from '@/Components/Engagement/CommentSection.vue';
+import { EyeIcon } from '@heroicons/vue/24/outline';
+import { StarIcon, HeartIcon as HeartIconSolid } from '@heroicons/vue/24/solid';
 
 interface Genre {
   id: number;
@@ -143,14 +145,18 @@ const handleAddToCart = async (chapterId: number) => {
           <!-- Metrics Stat & Interactive Action Row -->
           <div class="flex flex-wrap items-center gap-6 py-3 border-y border-slate-800 text-sm">
             <div class="flex items-center gap-2">
-              <span class="font-bold text-amber-400 text-base">⭐ {{ comic.rating_average ? comic.rating_average.toFixed(1) : '0.0' }}</span>
+              <span class="font-bold text-amber-400 text-base flex items-center gap-1">
+                <StarIcon class="w-4 h-4 text-amber-400 fill-amber-400 shrink-0" />
+                {{ comic.rating_average ? comic.rating_average.toFixed(1) : '0.0' }}
+              </span>
               <StarRating :comicId="comic.id" :initialRating="userRating" />
             </div>
             <div class="text-slate-400">
-              👁 {{ comic.total_views ? comic.total_views.toLocaleString() : 0 }} Views
+                <span class="flex items-center"><EyeIcon class="w-4 h-4 mr-1" /> {{ comic.total_views ? comic.total_views.toLocaleString() : 0 }} Views</span>
             </div>
-            <div class="text-slate-400">
-              ❤️ {{ comic.total_bookmarks ? comic.total_bookmarks.toLocaleString() : 0 }} Bookmarks
+            <div class="text-slate-400 flex items-center gap-1">
+              <HeartIconSolid class="w-4 h-4 text-rose-500 fill-rose-500 shrink-0" />
+              <span>{{ comic.total_bookmarks ? comic.total_bookmarks.toLocaleString() : 0 }} Bookmarks</span>
             </div>
             <div>
               <BookmarkButton :comicId="comic.id" :initialBookmarked="isBookmarked" />

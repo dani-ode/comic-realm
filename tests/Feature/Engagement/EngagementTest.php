@@ -68,3 +68,10 @@ it('allows posting and fetching threaded comments', function () {
     $fetchResponse = $this->get("/api/comments?comic_id={$comic->id}");
     $fetchResponse->assertStatus(200);
 });
+
+it('renders the bookmarks list page for authenticated users', function () {
+    $user = User::factory()->create();
+    $response = $this->actingAs($user)->get('/bookmarks');
+    $response->assertStatus(200);
+});
+

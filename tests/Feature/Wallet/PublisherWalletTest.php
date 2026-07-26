@@ -4,7 +4,9 @@ use App\Domain\Order\Models\Order;
 use App\Domain\Order\Models\OrderItem;
 use App\Domain\Publisher\Models\PublisherProfile;
 use App\Domain\User\Models\User;
+use App\Domain\Wallet\Actions\ApproveWithdrawal;
 use App\Domain\Wallet\Actions\CreditPublisherRoyalty;
+use App\Domain\Wallet\Models\WithdrawalRequest;
 
 it('credits publisher royalty share 70% from completed order', function () {
     $publisherUser = User::factory()->publisher()->create();
@@ -52,7 +54,7 @@ it('credits publisher royalty share 70% from completed order', function () {
     ]);
 });
 
-it('allows publisher to request payout withdrawal', function () {
+it('allows publisher to request payout withdrawal and deducts balance upon admin approval', function () {
     $publisherUser = User::factory()->publisher()->create();
     $publisherProfile = PublisherProfile::create([
         'user_id' => $publisherUser->id,
@@ -73,15 +75,23 @@ it('allows publisher to request payout withdrawal', function () {
 
     $response->assertRedirect();
 
+    // While pending, balance remains 100000 (disbursement manual transfer logic)
+    $this->assertDatabaseHas('publisher_wallets', [
+        'id' => $wallet->id,
+        'balance' => 100000,
+        'total_withdrawn' => 0,
+    ]);
+
+    $withdrawal = WithdrawalRequest::where('publisher_id', $publisherProfile->id)->first();
+    expect($withdrawal->status)->toBe('pending');
+
+    // Admin approves manual payout transfer
+    app(ApproveWithdrawal::class)->execute($withdrawal);
+
+    // After approval, balance is deducted to 50000 and total_withdrawn becomes 50000
     $this->assertDatabaseHas('publisher_wallets', [
         'id' => $wallet->id,
         'balance' => 50000,
         'total_withdrawn' => 50000,
-    ]);
-
-    $this->assertDatabaseHas('withdrawal_requests', [
-        'publisher_id' => $publisherProfile->id,
-        'amount' => 50000,
-        'status' => 'pending',
     ]);
 });

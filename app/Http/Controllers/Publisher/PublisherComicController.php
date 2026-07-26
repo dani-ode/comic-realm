@@ -91,4 +91,65 @@ class PublisherComicController extends Controller
 
         return redirect()->route('publisher.dashboard')->with('success', 'Komik baru berhasil dibuat.');
     }
+
+    public function edit(int $id, Request $request): InertiaResponse|RedirectResponse
+    {
+        $user = $request->user();
+        $comic = Comic::with(['genres', 'chapters'])
+            ->where('id', $id)
+            ->where('publisher_id', $user->id)
+            ->firstOrFail();
+
+        $genres = Genre::where('is_active', true)->get(['id', 'name', 'slug']);
+
+        return Inertia::render('Publisher/Comics/Edit', [
+            'comic' => $comic,
+            'genres' => $genres,
+        ]);
+    }
+
+    public function update(int $id, Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $comic = Comic::where('id', $id)
+            ->where('publisher_id', $user->id)
+            ->firstOrFail();
+
+        $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string'],
+            'cover_image' => ['nullable', 'string', 'max:500'],
+            'author_name' => ['nullable', 'string', 'max:150'],
+            'artist_name' => ['nullable', 'string', 'max:150'],
+            'status' => ['required', 'string'],
+            'genres' => ['nullable', 'array'],
+        ]);
+
+        $comic->update([
+            'title' => $request->input('title'),
+            'description' => $request->input('description'),
+            'cover_image' => $request->input('cover_image', $comic->cover_image),
+            'author_name' => $request->input('author_name'),
+            'artist_name' => $request->input('artist_name'),
+            'status' => $request->input('status'),
+        ]);
+
+        if ($request->has('genres')) {
+            $comic->genres()->sync($request->input('genres'));
+        }
+
+        return redirect()->route('publisher.dashboard')->with('success', "Komik {$comic->title} berhasil diperbarui.");
+    }
+
+    public function destroy(int $id, Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $comic = Comic::where('id', $id)
+            ->where('publisher_id', $user->id)
+            ->firstOrFail();
+
+        $comic->delete();
+
+        return redirect()->route('publisher.dashboard')->with('success', "Komik {$comic->title} telah dihapus.");
+    }
 }

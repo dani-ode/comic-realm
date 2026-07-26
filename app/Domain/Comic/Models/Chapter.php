@@ -53,4 +53,9 @@ class Chapter extends Model
     {
         return $this->hasMany(ChapterPage::class)->orderBy('page_number', 'asc');
     }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(\App\Domain\Engagement\Models\Comment::class);
+    }
 }

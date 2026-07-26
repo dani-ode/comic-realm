@@ -4,7 +4,6 @@ namespace App\Domain\Wallet\Actions;
 
 use App\Domain\Publisher\Models\PublisherProfile;
 use App\Domain\Wallet\Models\PublisherWallet;
-use App\Domain\Wallet\Models\WalletTransaction;
 use App\Domain\Wallet\Models\WithdrawalRequest;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -20,18 +19,17 @@ class RequestWithdrawal
                 throw new InvalidArgumentException('Minimal penarikan dana royalti adalah Rp 50.000.');
             }
 
-            if ($wallet->balance < $amount) {
-                throw new InvalidArgumentException('Saldo dompet royalti Anda tidak mencukupi.');
+            $pendingAmount = WithdrawalRequest::where('wallet_id', $wallet->id)
+                ->where('status', 'pending')
+                ->sum('amount');
+
+            $availableBalance = $wallet->balance - $pendingAmount;
+
+            if ($availableBalance < $amount) {
+                throw new InvalidArgumentException('Saldo dompet royalti yang tersedia tidak mencukupi untuk penarikan ini.');
             }
 
-            $newBalance = $wallet->balance - $amount;
-
-            $wallet->update([
-                'balance' => $newBalance,
-                'total_withdrawn' => $wallet->total_withdrawn + $amount,
-            ]);
-
-            $withdrawal = WithdrawalRequest::create([
+            return WithdrawalRequest::create([
                 'wallet_id' => $wallet->id,
                 'publisher_id' => $publisher->id,
                 'amount' => $amount,
@@ -40,17 +38,6 @@ class RequestWithdrawal
                 'bank_account_name' => $publisher->bank_account_name ?: $publisher->brand_name,
                 'status' => 'pending',
             ]);
-
-            WalletTransaction::create([
-                'wallet_id' => $wallet->id,
-                'type' => 'debit',
-                'amount' => $amount,
-                'balance_after' => $newBalance,
-                'description' => "Penarikan dana payout royalti ke {$withdrawal->bank_name} ({$withdrawal->bank_account_number})",
-                'reference_number' => 'WD-' . $withdrawal->id,
-            ]);
-
-            return $withdrawal;
         });
     }
 }

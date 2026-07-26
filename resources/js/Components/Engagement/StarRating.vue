@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import axios from 'axios';
+import { StarIcon as StarIconOutline } from '@heroicons/vue/24/outline';
+import { StarIcon as StarIconSolid } from '@heroicons/vue/24/solid';
 
 const props = defineProps<{
   comicId: number;
@@ -36,7 +38,7 @@ const setRating = async (val: number) => {
 </script>
 
 <template>
-  <div class="flex items-center gap-1">
+  <div class="flex items-center gap-0.5">
     <button
       v-for="star in 5"
       :key="star"
@@ -45,13 +47,19 @@ const setRating = async (val: number) => {
       @click="setRating(star)"
       @mouseenter="hoverRating = star"
       @mouseleave="hoverRating = 0"
-      class="text-lg transition focus:outline-none"
+      class="p-0.5 transition focus:outline-none"
       :class="[
-        (hoverRating || rating) >= star ? 'text-amber-400 scale-110' : 'text-slate-700',
         readOnly ? 'cursor-default' : 'cursor-pointer hover:scale-125'
       ]"
     >
-      ★
+      <StarIconSolid
+        v-if="(hoverRating || rating) >= star"
+        class="w-4 h-4 text-amber-400 fill-amber-400"
+      />
+      <StarIconOutline
+        v-else
+        class="w-4 h-4 text-slate-700"
+      />
     </button>
   </div>
 </template>

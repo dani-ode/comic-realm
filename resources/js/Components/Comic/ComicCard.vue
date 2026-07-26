@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
+import { EyeIcon } from '@heroicons/vue/24/outline';
+import { StarIcon } from '@heroicons/vue/24/solid';
 import GenreBadge from './GenreBadge.vue';
 
 interface Genre {
@@ -39,7 +41,8 @@ defineProps<{
       />
       <!-- Rating Badge -->
       <div class="absolute top-2.5 right-2.5 bg-slate-950/80 backdrop-blur-md text-amber-400 font-bold text-xs px-2.5 py-1 rounded-full border border-amber-400/30 flex items-center gap-1">
-        ⭐ {{ comic.rating_average ? comic.rating_average.toFixed(1) : '0.0' }}
+        <StarIcon class="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
+        <span>{{ comic.rating_average ? comic.rating_average.toFixed(1) : '0.0' }}</span>
       </div>
       <!-- Status Badge -->
       <div class="absolute bottom-2.5 left-2.5 bg-slate-950/80 backdrop-blur-md text-slate-300 text-xs px-2.5 py-1 rounded-md border border-slate-700 capitalize">
@@ -64,7 +67,7 @@ defineProps<{
       </p>
 
       <div class="mt-auto pt-3 flex items-center justify-between text-xs text-slate-500 border-t border-slate-800/80">
-        <span>👁 {{ comic.total_views ? comic.total_views.toLocaleString() : 0 }} views</span>
+        <span class="flex items-center"><EyeIcon class="w-4 h-4 mr-1" /> {{ comic.total_views ? comic.total_views.toLocaleString() : 0 }} Views</span>
         <Link :href="`/comics/${comic.slug}`" class="text-sky-400 font-medium hover:underline">
           Read Now →
         </Link>

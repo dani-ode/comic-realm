@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
+import { RocketLaunchIcon } from '@heroicons/vue/24/outline';
 
 defineProps<{
   appName?: string;
@@ -12,7 +13,7 @@ defineProps<{
   <div class="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 text-center">
     <div class="max-w-2xl">
       <div class="inline-block px-4 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 text-sm font-medium mb-6">
-        🚀 The ComicRealm Engine Initialized
+        <RocketLaunchIcon class="w-5 h-5 inline-block mr-1"/> The ComicRealm Engine Initialized
       </div>
       <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight mb-4 bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
         The ComicRealm

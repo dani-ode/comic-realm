@@ -102,4 +102,66 @@ class PublisherChapterController extends Controller
             'message' => count($pages) . ' halaman gambar WebP berhasil diunggah.',
         ]);
     }
+
+    public function edit(int $comicId, int $chapterId, Request $request): InertiaResponse|RedirectResponse
+    {
+        $user = $request->user();
+        $comic = Comic::where('id', $comicId)
+            ->where('publisher_id', $user->id)
+            ->firstOrFail();
+
+        $chapter = Chapter::with('pages')
+            ->where('id', $chapterId)
+            ->where('comic_id', $comic->id)
+            ->firstOrFail();
+
+        return Inertia::render('Publisher/Chapters/Edit', [
+            'comic' => $comic,
+            'chapter' => $chapter,
+        ]);
+    }
+
+    public function update(int $comicId, int $chapterId, Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $comic = Comic::where('id', $comicId)
+            ->where('publisher_id', $user->id)
+            ->firstOrFail();
+
+        $chapter = Chapter::where('id', $chapterId)
+            ->where('comic_id', $comic->id)
+            ->firstOrFail();
+
+        $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'chapter_number' => ['required', 'numeric', 'min:0.1'],
+            'is_free' => ['required', 'boolean'],
+            'price' => ['required_if:is_free,false', 'numeric', 'min:0'],
+        ]);
+
+        $chapter->update([
+            'title' => $request->input('title'),
+            'chapter_number' => (float) $request->input('chapter_number'),
+            'is_free' => (bool) $request->input('is_free'),
+            'price' => $request->input('is_free') ? 0 : (int) $request->input('price'),
+        ]);
+
+        return redirect()->route('publisher.dashboard')->with('success', "Bab {$chapter->chapter_number} berhasil diperbarui.");
+    }
+
+    public function destroy(int $comicId, int $chapterId, Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $comic = Comic::where('id', $comicId)
+            ->where('publisher_id', $user->id)
+            ->firstOrFail();
+
+        $chapter = Chapter::where('id', $chapterId)
+            ->where('comic_id', $comic->id)
+            ->firstOrFail();
+
+        $chapter->delete();
+
+        return redirect()->route('publisher.dashboard')->with('success', "Bab {$chapter->chapter_number} telah dihapus.");
+    }
 }

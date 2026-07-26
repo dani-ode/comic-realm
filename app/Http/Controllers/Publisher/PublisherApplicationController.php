@@ -16,6 +16,10 @@ class PublisherApplicationController extends Controller
 {
     public function create(Request $request): InertiaResponse|RedirectResponse
     {
+        if ($request->user()->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
         $profile = PublisherProfile::where('user_id', $request->user()->id)->first();
 
         // Jika sudah mendaftar studio (baik status pending maupun approved), langsung redirect ke dashboard
@@ -30,6 +34,10 @@ class PublisherApplicationController extends Controller
 
     public function store(ApplyPublisherRequest $request, ApplyPublisher $applyPublisher): RedirectResponse
     {
+        if ($request->user()->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
         $profile = PublisherProfile::where('user_id', $request->user()->id)->first();
         if ($profile) {
             return redirect()->route('publisher.dashboard');

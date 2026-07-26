@@ -4,9 +4,13 @@ namespace App\Domain\Publisher\Models;
 
 use App\Domain\Publisher\Enums\PublisherStatus;
 use App\Domain\User\Models\User;
+use App\Domain\Comic\Models\Comic;
+use App\Domain\Wallet\Models\PublisherWallet;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class PublisherProfile extends Model
 {
@@ -38,6 +42,16 @@ class PublisherProfile extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function wallet(): HasOne
+    {
+        return $this->hasOne(PublisherWallet::class, 'publisher_id');
+    }
+
+    public function comics(): HasMany
+    {
+        return $this->hasMany(Comic::class, 'publisher_id', 'user_id');
     }
 
     public function isApproved(): bool
