@@ -13,6 +13,15 @@ class CommentController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        if (! $request->has('comic_id') || ! $request->filled('comic_id')) {
+            return response()->json([
+                'current_page' => 1,
+                'data' => [],
+                'total' => 0,
+                'last_page' => 1,
+            ]);
+        }
+
         $request->validate([
             'comic_id' => ['required', 'integer', 'exists:comics,id'],
             'chapter_id' => ['nullable', 'integer', 'exists:chapters,id'],
