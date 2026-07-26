@@ -291,16 +291,6 @@ const submitPasswordUpdate = () => {
           </div>
         </button>
 
-        <!-- Link ke site publik -->
-        <a
-          v-if="isSidebarOpen"
-          href="/"
-          target="_blank"
-          class="shrink-0 text-slate-500 hover:text-white p-1.5 transition ml-1"
-          title="Buka website publik"
-        >
-          <ArrowTopRightOnSquareIcon class="w-4 h-4" />
-        </a>
       </div>
     </aside>
 

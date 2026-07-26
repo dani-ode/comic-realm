@@ -174,7 +174,7 @@ function copyToClipboard(email: string) {
                 >
                     <p class="font-bold text-slate-300 flex items-center gap-1.5">
                         <KeyIcon class="w-4 h-4" /> Demo Accounts ( Password :
-                        <span class="text-sky-400">passwOrd123</span>  <button @click="copyToClipboard('passwOrd123')" class="inline-flex items-center gap-1 text-slate-400 hover:text-sky-400">
+                        <span class="text-sky-400">password123</span>  <button @click="copyToClipboard('password123')" class="inline-flex items-center gap-1 text-slate-400 hover:text-sky-400">
                             <ClipboardDocumentIcon class="w-4 h-4" /> Copy
                         </button>)
                     </p>

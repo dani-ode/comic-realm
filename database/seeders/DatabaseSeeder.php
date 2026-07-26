@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name'     => 'Admin ComicRealm',
                 'username' => 'admin',
-                'password' => Hash::make('passwOrd123'),
+                'password' => Hash::make('password123'),
                 'role'     => 'admin',
                 'status'   => 'active',
             ]
@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name'     => 'Budi Santoso',
                 'username' => 'budisantoso',
-                'password' => Hash::make('passwOrd123'),
+                'password' => Hash::make('password123'),
                 'role'     => 'user',
                 'status'   => 'active',
             ]
@@ -56,7 +56,7 @@ class DatabaseSeeder extends Seeder
                 [
                     'name'     => $r['name'],
                     'username' => $r['username'],
-                    'password' => Hash::make('passwOrd123'),
+                    'password' => Hash::make('password123'),
                     'role'     => 'user',
                     'status'   => 'active',
                 ]

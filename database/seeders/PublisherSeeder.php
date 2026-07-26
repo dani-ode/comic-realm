@@ -163,7 +163,7 @@ class PublisherSeeder extends Seeder
             $user = User::firstOrCreate(
                 ['email' => $data['user']['email']],
                 array_merge($data['user'], [
-                    'password' => Hash::make('password'),
+                    'password' => Hash::make('password123'),
                 ])
             );
             $user->profile()->firstOrCreate([]);
