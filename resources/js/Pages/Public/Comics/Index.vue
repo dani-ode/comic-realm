@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import ComicCard from '@/Components/Comic/ComicCard.vue';
+import { XMarkIcon } from '@heroicons/vue/24/outline';
 
 interface Genre {
   id: number;
@@ -39,6 +40,14 @@ const selectedGenre = ref(props.filters.genre || '');
 const selectedStatus = ref(props.filters.status || '');
 const selectedSort = ref(props.filters.sort || '');
 
+// Sync local refs when props.filters changes (e.g. via direct genre link click)
+watch(() => props.filters, (newFilters) => {
+  search.value = newFilters.search || '';
+  selectedGenre.value = newFilters.genre || '';
+  selectedStatus.value = newFilters.status || '';
+  selectedSort.value = newFilters.sort || '';
+}, { deep: true });
+
 const applyFilters = () => {
   router.get('/comics', {
     search: search.value || undefined,
@@ -51,6 +60,13 @@ const applyFilters = () => {
 watch([selectedGenre, selectedStatus, selectedSort], () => {
   applyFilters();
 });
+
+const clearFilter = (filterKey: 'genre' | 'search' | 'status' | 'all') => {
+  if (filterKey === 'genre' || filterKey === 'all') selectedGenre.value = '';
+  if (filterKey === 'search' || filterKey === 'all') search.value = '';
+  if (filterKey === 'status' || filterKey === 'all') selectedStatus.value = '';
+  applyFilters();
+};
 </script>
 
 <template>
@@ -110,14 +126,33 @@ watch([selectedGenre, selectedStatus, selectedSort], () => {
         </div>
       </div>
 
+      <!-- Active Filter Chips -->
+      <div v-if="selectedGenre || search || selectedStatus" class="flex items-center gap-2 flex-wrap text-xs">
+        <span class="text-slate-400 font-semibold">Active Filters:</span>
+        <span v-if="selectedGenre" class="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/30 font-bold">
+          Genre: {{ genres.find(g => g.slug === selectedGenre)?.name || selectedGenre }}
+          <button @click="clearFilter('genre')" class="hover:text-white"><XMarkIcon class="w-3.5 h-3.5" /></button>
+        </span>
+        <span v-if="search" class="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 font-bold">
+          Search: "{{ search }}"
+          <button @click="clearFilter('search')" class="hover:text-white"><XMarkIcon class="w-3.5 h-3.5" /></button>
+        </span>
+        <button @click="clearFilter('all')" class="text-xs font-bold text-rose-400 hover:underline ml-2">
+          Reset All Filters
+        </button>
+      </div>
+
       <!-- Comics Grid -->
       <div v-if="comics.data && comics.data.length" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
         <ComicCard v-for="comic in comics.data" :key="comic.id" :comic="comic" />
       </div>
 
-      <div v-else class="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
+      <div v-else class="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 text-center text-slate-400 space-y-2">
         <p class="text-lg font-medium text-slate-300">No comics found matching your criteria</p>
-        <p class="text-xs mt-1">Try clearing your filters or search term</p>
+        <p class="text-xs">Try clearing your filters or search term</p>
+        <button @click="clearFilter('all')" class="inline-block mt-3 px-4 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white transition">
+          Clear All Filters
+        </button>
       </div>
 
       <!-- Pagination Links -->
