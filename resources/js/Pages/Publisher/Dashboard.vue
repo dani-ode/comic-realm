@@ -16,6 +16,10 @@ import {
   BookOpenIcon,
   ArrowTopRightOnSquareIcon,
   SwatchIcon,
+  BanknotesIcon,
+  ArrowRightIcon,
+  RectangleStackIcon,
+  ChartBarIcon,
 } from '@heroicons/vue/24/outline';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/vue/24/solid';
 
@@ -49,8 +53,19 @@ interface Profile {
   rejection_reason?: string;
 }
 
+interface Stats {
+  total_comics: number;
+  total_chapters: number;
+  total_views: number;
+  wallet_balance: number;
+  total_earned: number;
+  total_withdrawn: number;
+}
+
 const props = defineProps<{
   profile?: Profile | null;
+  stats: Stats;
+  topComics: Comic[];
   comics: Comic[];
 }>();
 
@@ -80,7 +95,7 @@ const submitProfileUpdate = () => {
 </script>
 
 <template>
-  <Head title="Creator Studio Dashboard" />
+  <Head title="Studio Overview & Analytics - Creator Studio" />
 
   <AdminLayout>
     <div class="space-y-8">
@@ -133,20 +148,33 @@ const submitProfileUpdate = () => {
         </div>
       </div>
 
-      <!-- Verified Studio Bar -->
-      <div v-else class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-2xl p-4 px-6">
-        <div class="flex items-center gap-3">
-          <CheckCircleSolid class="w-5 h-5 text-emerald-400 shrink-0" />
-          <span class="text-emerald-400 font-extrabold text-sm">Studio Verified</span>
-          <span class="text-slate-400 text-xs">• {{ profile?.brand_name }}</span>
+      <!-- Verified Studio Header -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <CheckCircleSolid class="w-5 h-5 text-emerald-400 shrink-0" />
+            <span class="text-xs font-extrabold uppercase text-emerald-400 tracking-wider">Verified Publisher Studio</span>
+          </div>
+          <h1 class="text-3xl font-extrabold text-white">{{ profile?.brand_name }}</h1>
+          <p class="text-xs text-slate-400">Ikhtisar statistik pendapatan, jumlah pembaca, dan performa karya studio Anda</p>
         </div>
-        <button
-          @click="showEditForm = !showEditForm"
-          class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition"
-        >
-          <Cog6ToothIcon class="w-3.5 h-3.5" />
-          Ajukan Perubahan Studio
-        </button>
+
+        <div class="flex items-center gap-3 flex-wrap">
+          <Link
+            href="/publisher/comics"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white transition shadow-lg shadow-sky-600/20"
+          >
+            <BookOpenIcon class="w-4 h-4" />
+            Kelola Komik & Chapter →
+          </Link>
+          <Link
+            href="/publisher/wallet"
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition"
+          >
+            <BanknotesIcon class="w-4 h-4 text-emerald-400" />
+            Dompet Payout
+          </Link>
+        </div>
       </div>
 
       <!-- Edit Form Card -->
@@ -233,103 +261,114 @@ const submitProfileUpdate = () => {
         </form>
       </div>
 
-      <!-- Page Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 class="text-3xl font-extrabold text-white">Publisher Studio Dashboard</h1>
-          <p class="text-sm text-slate-400 mt-1">Manage your webcomics, publish new chapters, and track views</p>
+      <!-- Key Analytics Metrics -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Link href="/publisher/wallet" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2 hover:border-emerald-500/40 transition group">
+          <div class="flex items-center justify-between text-xs text-slate-400 font-semibold uppercase tracking-wider">
+            <span>Saldo Siap Payout</span>
+            <BanknotesIcon class="w-5 h-5 text-emerald-400 group-hover:scale-110 transition" />
+          </div>
+          <div class="text-2xl font-extrabold text-emerald-400 font-mono">
+            Rp {{ stats.wallet_balance.toLocaleString() }}
+          </div>
+          <p class="text-[11px] text-slate-500">Klik untuk ajukan penarikan dana</p>
+        </Link>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
+          <div class="flex items-center justify-between text-xs text-slate-400 font-semibold uppercase tracking-wider">
+            <span>Total Pendapatan Kotor</span>
+            <ChartBarIcon class="w-5 h-5 text-sky-400" />
+          </div>
+          <div class="text-2xl font-extrabold text-white font-mono">
+            Rp {{ stats.total_earned.toLocaleString() }}
+          </div>
+          <p class="text-[11px] text-slate-500">Bagi hasil 70% penjualan komik</p>
         </div>
 
-        <Link
-          v-if="isApproved"
-          href="/publisher/comics/create"
-          class="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white transition shadow-lg shadow-sky-600/30 self-start"
-        >
-          <PlusIcon class="w-4 h-4" />
-          Create New Comic Series
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
+          <div class="flex items-center justify-between text-xs text-slate-400 font-semibold uppercase tracking-wider">
+            <span>Total Pembaca (Views)</span>
+            <EyeIcon class="w-5 h-5 text-indigo-400" />
+          </div>
+          <div class="text-2xl font-extrabold text-white font-mono">
+            {{ stats.total_views.toLocaleString() }}
+          </div>
+          <p class="text-[11px] text-slate-500">Akumulasi seluruh judul komik</p>
+        </div>
+
+        <Link href="/publisher/comics" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2 hover:border-sky-500/40 transition group">
+          <div class="flex items-center justify-between text-xs text-slate-400 font-semibold uppercase tracking-wider">
+            <span>Katalog & Chapter</span>
+            <BookOpenIcon class="w-5 h-5 text-amber-400 group-hover:scale-110 transition" />
+          </div>
+          <div class="text-2xl font-extrabold text-white font-mono">
+            {{ stats.total_comics }} Komik <span class="text-sm font-normal text-slate-400">({{ stats.total_chapters }} Bab)</span>
+          </div>
+          <p class="text-[11px] text-sky-400 font-semibold">Kelola judul & terbitkan bab →</p>
         </Link>
-        <button
-          v-else
-          disabled
-          class="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold bg-slate-800 text-slate-500 border border-slate-700/50 cursor-not-allowed opacity-60 self-start"
-        >
-          <LockClosedIcon class="w-4 h-4" />
-          Create New Comic Series (Locked)
-        </button>
       </div>
 
-      <!-- Comics List -->
-      <div v-if="comics && comics.length" class="space-y-5">
-        <div
-          v-for="comic in comics"
-          :key="comic.id"
-          class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start justify-between"
-        >
-          <div class="flex items-start gap-4">
-            <img :src="comic.cover_image" :alt="comic.title" class="w-20 h-28 object-cover rounded-xl border border-slate-800 shrink-0 bg-slate-950" />
-            <div class="space-y-1.5">
-              <span class="text-xs text-sky-400 font-bold uppercase tracking-wider">{{ comic.status }}</span>
-              <h2 class="text-lg font-bold text-white">{{ comic.title }}</h2>
-              <p class="text-xs text-slate-400 flex items-center gap-3">
-                <span class="flex items-center gap-1">
-                  <StarIcon class="w-3.5 h-3.5 text-amber-400" />
-                  {{ comic.rating_average ? comic.rating_average.toFixed(1) : '0.0' }}
-                </span>
-                <span class="flex items-center gap-1">
-                  <EyeIcon class="w-3.5 h-3.5 text-slate-400" />
-                  {{ comic.total_views ? comic.total_views.toLocaleString() : 0 }} Views
-                </span>
-              </p>
-              <p v-if="comic.chapters" class="text-xs text-slate-500 flex items-center gap-1">
-                <BookOpenIcon class="w-3.5 h-3.5" />
-                {{ comic.chapters.length }} Chapters Published
-              </p>
+      <!-- Top Performing Comics Section -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+          <div>
+            <h2 class="text-lg font-extrabold text-white flex items-center gap-2">
+              <StarIcon class="w-5 h-5 text-amber-400 shrink-0" />
+              Serial Komik Terpopuler
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Komik studio Anda dengan jumlah pembaca terbanyak</p>
+          </div>
+
+          <Link
+            href="/publisher/comics"
+            class="text-xs font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1"
+          >
+            Lihat Semua Komik <ArrowRightIcon class="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div v-if="topComics && topComics.length" class="space-y-4">
+          <div
+            v-for="(comic, index) in topComics"
+            :key="comic.id"
+            class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-slate-700 transition"
+          >
+            <div class="flex items-center gap-4">
+              <div class="w-7 h-7 rounded-lg bg-slate-800 text-amber-400 font-extrabold text-xs flex items-center justify-center shrink-0">
+                #{{ index + 1 }}
+              </div>
+              <img :src="comic.cover_image" :alt="comic.title" class="w-12 h-16 object-cover rounded-lg border border-slate-800 shrink-0 bg-slate-900" />
+              <div>
+                <h3 class="font-bold text-white text-sm">{{ comic.title }}</h3>
+                <div class="flex items-center gap-3 text-xs text-slate-400 mt-1">
+                  <span class="flex items-center gap-1 text-amber-400 font-semibold">
+                    ★ {{ comic.rating_average ? comic.rating_average.toFixed(1) : '0.0' }}
+                  </span>
+                  <span>• {{ comic.total_views.toLocaleString() }} Views</span>
+                  <span>• {{ comic.chapters ? comic.chapters.length : 0 }} Bab</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-end sm:self-center">
+              <Link
+                :href="`/publisher/comics/${comic.id}/chapters/create`"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-sky-600 hover:bg-sky-500 transition"
+              >
+                + Add Chapter
+              </Link>
+              <Link
+                :href="`/publisher/comics/${comic.id}/edit`"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 transition"
+              >
+                Edit Komik
+              </Link>
             </div>
           </div>
-
-          <div class="flex items-center gap-3 w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-4 md:pt-0">
-            <Link
-              v-if="isApproved"
-              :href="`/publisher/comics/${comic.id}/chapters/create`"
-              class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white transition"
-            >
-              <PlusIcon class="w-3.5 h-3.5" /> Add Chapter
-            </Link>
-            <span
-              v-else
-              class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-500 border border-slate-700/50 cursor-not-allowed"
-            >
-              <LockClosedIcon class="w-3.5 h-3.5" /> Add Chapter
-            </span>
-
-            <a
-              :href="`/comics/${comic.slug}`"
-              target="_blank"
-              class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 border border-slate-700 text-slate-200 hover:text-white transition"
-            >
-              <ArrowTopRightOnSquareIcon class="w-3.5 h-3.5" />
-              View Public Page
-            </a>
-          </div>
         </div>
-      </div>
 
-      <!-- Empty State -->
-      <div v-else class="bg-slate-900/40 border border-slate-800 rounded-2xl p-16 text-center space-y-4">
-        <div class="flex justify-center">
-          <div class="w-16 h-16 rounded-2xl bg-slate-800/60 flex items-center justify-center">
-            <SwatchIcon class="w-8 h-8 text-slate-500" />
-          </div>
-        </div>
-        <h2 class="text-xl font-bold text-white">No Webcomics Published Yet</h2>
-        <p class="text-sm text-slate-400 max-w-md mx-auto">
-          <template v-if="isApproved">Start your creator journey by creating your first vertical webcomic series.</template>
-          <template v-else>Akun studio Anda sedang dalam proses verifikasi. Pembuatan komik baru akan aktif setelah disetujui oleh admin.</template>
-        </p>
-        <div class="pt-2" v-if="isApproved">
-          <Link href="/publisher/comics/create" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm transition">
-            <PlusIcon class="w-4 h-4" /> Create New Comic Series
-          </Link>
+        <div v-else class="text-center py-8 text-slate-500 text-xs">
+          Belum ada komik yang diterbitkan. Silakan buat serial komik baru.
         </div>
       </div>
 

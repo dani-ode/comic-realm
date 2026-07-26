@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Publisher;
 use App\Domain\Comic\Models\Comic;
 use App\Domain\Comic\Models\Genre;
 use App\Domain\Publisher\Models\PublisherProfile;
+use App\Domain\Wallet\Models\PublisherWallet;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,9 +31,64 @@ class PublisherComicController extends Controller
             ->latest()
             ->get();
 
+        $wallet = PublisherWallet::where('publisher_id', $profile->id)->first();
+
+        $stats = [
+            'total_comics' => $comics->count(),
+            'total_chapters' => $comics->sum(fn ($c) => $c->chapters->count()),
+            'total_views' => $comics->sum('total_views'),
+            'wallet_balance' => $wallet ? $wallet->balance : 0,
+            'total_earned' => $wallet ? $wallet->total_earned : 0,
+            'total_withdrawn' => $wallet ? $wallet->total_withdrawn : 0,
+        ];
+
+        $topComics = Comic::with(['chapters'])
+            ->where('publisher_id', $user->id)
+            ->orderBy('total_views', 'desc')
+            ->take(5)
+            ->get();
+
         return Inertia::render('Publisher/Dashboard', [
             'profile' => $profile,
+            'stats' => $stats,
+            'topComics' => $topComics,
             'comics' => $comics,
+        ]);
+    }
+
+    public function index(Request $request): InertiaResponse|RedirectResponse
+    {
+        $user = $request->user();
+
+        $profile = PublisherProfile::where('user_id', $user->id)->first();
+
+        if (! $profile) {
+            return redirect()->route('publisher.apply');
+        }
+
+        $search = $request->query('search');
+        $status = $request->query('status');
+
+        $query = Comic::with(['genres', 'chapters' => fn ($q) => $q->orderBy('chapter_number', 'desc')])
+            ->where('publisher_id', $user->id);
+
+        if ($search) {
+            $query->where('title', 'like', "%{$search}%");
+        }
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        $comics = $query->latest()->get();
+
+        return Inertia::render('Publisher/Comics/Index', [
+            'profile' => $profile,
+            'comics' => $comics,
+            'filters' => [
+                'search' => $search ?? '',
+                'status' => $status ?? '',
+            ],
         ]);
     }
 
@@ -89,7 +145,7 @@ class PublisherComicController extends Controller
 
         $comic->genres()->sync($request->input('genres'));
 
-        return redirect()->route('publisher.dashboard')->with('success', 'Komik baru berhasil dibuat.');
+        return redirect()->route('publisher.comics.index')->with('success', 'Komik baru berhasil dibuat.');
     }
 
     public function edit(int $id, Request $request): InertiaResponse|RedirectResponse
@@ -138,7 +194,7 @@ class PublisherComicController extends Controller
             $comic->genres()->sync($request->input('genres'));
         }
 
-        return redirect()->route('publisher.dashboard')->with('success', "Komik {$comic->title} berhasil diperbarui.");
+        return redirect()->route('publisher.comics.index')->with('success', "Komik {$comic->title} berhasil diperbarui.");
     }
 
     public function destroy(int $id, Request $request): RedirectResponse
@@ -150,6 +206,6 @@ class PublisherComicController extends Controller
 
         $comic->delete();
 
-        return redirect()->route('publisher.dashboard')->with('success', "Komik {$comic->title} telah dihapus.");
+        return redirect()->route('publisher.comics.index')->with('success', "Komik {$comic->title} telah dihapus.");
     }
 }

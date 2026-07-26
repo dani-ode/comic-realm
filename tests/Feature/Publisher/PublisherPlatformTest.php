@@ -60,7 +60,7 @@ it('allows approved publisher to create new comic series and publish chapter wit
         'genres' => [$genre->id],
     ]);
 
-    $responseComic->assertRedirect(route('publisher.dashboard'));
+    $responseComic->assertRedirect(route('publisher.comics.index'));
     $comic = Comic::where('title', 'The Cyber Ninja')->first();
 
     // 2. Publish Chapter with Fake Images
