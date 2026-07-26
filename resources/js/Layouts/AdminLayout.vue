@@ -257,18 +257,6 @@ const submitPasswordUpdate = () => {
             <span v-if="isSidebarOpen">Cashflow & Wallet</span>
           </Link>
 
-          <!-- New Comic -->
-          <Link
-            href="/publisher/comics/create"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
-            :class="page.url.startsWith('/publisher/comics/create')
-              ? 'bg-sky-600/20 text-sky-400 border border-sky-500/25 shadow-sm'
-              : 'text-slate-400 hover:bg-slate-800/70 hover:text-white'"
-          >
-            <PlusCircleIcon class="w-5 h-5 shrink-0" />
-            <span v-if="isSidebarOpen">New Comic Series</span>
-          </Link>
-
           <!-- Ke Admin Panel -->
           <div v-if="user && user.role === 'admin'" class="pt-3 mt-3 border-t border-slate-800/60">
             <Link

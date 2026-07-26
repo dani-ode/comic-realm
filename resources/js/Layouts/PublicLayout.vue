@@ -12,6 +12,7 @@ import {
     RectangleGroupIcon,
     ArrowRightOnRectangleIcon,
     UserCircleIcon,
+    BuildingStorefrontIcon,
 } from "@heroicons/vue/24/outline";
 
 const page = usePage();
@@ -106,6 +107,19 @@ onUnmounted(() => {
                 >
                     <HeartIcon class="w-4 h-4 text-rose-400" />
                     Bookmarks
+                </Link>
+                <Link
+                    v-if="($page.props.auth as any)?.user?.role === 'publisher' || ($page.props.auth as any)?.user?.role === 'admin'"
+                    href="/publisher/dashboard"
+                    class="flex items-center gap-1.5 text-slate-300 hover:text-white transition"
+                    :class="
+                        usePage().url.startsWith('/publisher')
+                            ? 'text-sky-400 font-bold'
+                            : ''
+                    "
+                >
+                    <BuildingStorefrontIcon class="w-4 h-4 text-sky-400" />
+                    Kelola Studio
                 </Link>
             </nav>
 
