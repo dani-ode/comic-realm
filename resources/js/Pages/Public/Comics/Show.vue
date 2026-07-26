@@ -104,6 +104,13 @@ const handleAddToCart = async (chapterId: number) => {
   } finally {
     isAdding.value = null;
   }
+const handleRatingUpdated = (payload: { user_rating: number; rating_average: number; total_ratings: number }) => {
+  props.comic.rating_average = payload.rating_average;
+  props.comic.total_ratings = payload.total_ratings;
+};
+
+const handleBookmarkUpdated = (payload: { bookmarked: boolean; total_bookmarks: number }) => {
+  props.comic.total_bookmarks = payload.total_bookmarks;
 };
 </script>
 
@@ -153,7 +160,7 @@ const handleAddToCart = async (chapterId: number) => {
               <span class="text-xs font-semibold text-slate-400">
                 ({{ comic.total_ratings ? comic.total_ratings.toLocaleString() : 0 }} rating)
               </span>
-              <StarRating :comicId="comic.id" :initialRating="userRating" />
+              <StarRating :comicId="comic.id" :initialRating="userRating" @updated="handleRatingUpdated" />
             </div>
             <div class="text-slate-400">
                 <span class="flex items-center"><EyeIcon class="w-4 h-4 mr-1" /> {{ comic.total_views ? comic.total_views.toLocaleString() : 0 }} Views</span>
@@ -163,7 +170,7 @@ const handleAddToCart = async (chapterId: number) => {
               <span>{{ comic.total_bookmarks ? comic.total_bookmarks.toLocaleString() : 0 }} Bookmarks</span>
             </div>
             <div>
-              <BookmarkButton :comicId="comic.id" :initialBookmarked="isBookmarked" />
+              <BookmarkButton :comicId="comic.id" :initialBookmarked="isBookmarked" @updated="handleBookmarkUpdated" />
             </div>
           </div>
 

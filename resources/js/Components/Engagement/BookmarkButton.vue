@@ -9,6 +9,10 @@ const props = defineProps<{
   initialBookmarked?: boolean;
 }>();
 
+const emit = defineEmits<{
+  (e: 'updated', payload: { bookmarked: boolean; total_bookmarks: number }): void;
+}>();
+
 const isBookmarked = ref(props.initialBookmarked || false);
 const isLoading = ref(false);
 
@@ -17,11 +21,16 @@ watch(() => props.initialBookmarked, (val) => {
 });
 
 const toggleBookmark = async () => {
+  if (isLoading.value) return;
   isLoading.value = true;
   try {
     const res = await axios.post('/api/bookmarks/toggle', { comic_id: props.comicId });
     if (res.data && res.data.success) {
       isBookmarked.value = res.data.bookmarked;
+      emit('updated', {
+        bookmarked: res.data.bookmarked,
+        total_bookmarks: res.data.total_bookmarks,
+      });
     }
   } catch (err: any) {
     if (err.response && err.response.status === 401) {

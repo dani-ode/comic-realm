@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Engagement;
 
+use App\Domain\Comic\Models\Comic;
 use App\Domain\Engagement\Actions\ToggleBookmark;
 use App\Domain\Engagement\Models\Bookmark;
 use App\Http\Controllers\Controller;
@@ -32,11 +33,14 @@ class BookmarkController extends Controller
             'comic_id' => ['required', 'integer', 'exists:comics,id'],
         ]);
 
-        $bookmarked = $toggleBookmark->execute($request->user(), (int) $request->input('comic_id'));
+        $comicId = (int) $request->input('comic_id');
+        $bookmarked = $toggleBookmark->execute($request->user(), $comicId);
+        $comic = Comic::find($comicId);
 
         return response()->json([
             'success' => true,
             'bookmarked' => $bookmarked,
+            'total_bookmarks' => $comic ? $comic->total_bookmarks : 0,
             'message' => $bookmarked ? 'Komik berhasil ditambahkan ke bookmark.' : 'Bookmark berhasil dihapus.',
         ]);
     }

@@ -38,6 +38,8 @@ class ComicController extends Controller
             ->where('publication_status', 'published')
             ->firstOrFail();
 
+        $comic->increment('total_views');
+
         $user = $request->user();
         $unlockedChapterIds = [];
         $cartChapterIds = [];

@@ -10,6 +10,10 @@ const props = defineProps<{
   readOnly?: boolean;
 }>();
 
+const emit = defineEmits<{
+  (e: 'updated', payload: { user_rating: number; rating_average: number; total_ratings: number }): void;
+}>();
+
 const rating = ref(props.initialRating || 0);
 const hoverRating = ref(0);
 const isLoading = ref(false);
@@ -19,14 +23,37 @@ watch(() => props.initialRating, (val) => {
 });
 
 const setRating = async (val: number) => {
-  if (props.readOnly) return;
+  if (props.readOnly || isLoading.value) return;
   isLoading.value = true;
-  rating.value = val;
+
+  // Re-clicking the current active star cancels the rating
+  const isCanceling = rating.value === val;
+
   try {
-    await axios.post('/api/ratings', {
-      comic_id: props.comicId,
-      rating: val,
-    });
+    if (isCanceling) {
+      const res = await axios.post('/api/ratings/cancel', { comic_id: props.comicId });
+      if (res.data && res.data.success) {
+        rating.value = 0;
+        emit('updated', {
+          user_rating: 0,
+          rating_average: res.data.rating_average,
+          total_ratings: res.data.total_ratings,
+        });
+      }
+    } else {
+      const res = await axios.post('/api/ratings', {
+        comic_id: props.comicId,
+        rating: val,
+      });
+      if (res.data && res.data.success) {
+        rating.value = val;
+        emit('updated', {
+          user_rating: val,
+          rating_average: res.data.rating_average,
+          total_ratings: res.data.total_ratings,
+        });
+      }
+    }
   } catch (err: any) {
     if (err.response && err.response.status === 401) {
       window.location.href = '/login';
@@ -38,7 +65,7 @@ const setRating = async (val: number) => {
 </script>
 
 <template>
-  <div class="flex items-center gap-0.5">
+  <div class="flex items-center gap-0.5" :title="rating > 0 ? `Rating Anda: ${rating} ★ (Klik lagi untuk membatalkan)` : 'Beri Rating'">
     <button
       v-for="star in 5"
       :key="star"

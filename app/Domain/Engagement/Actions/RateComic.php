@@ -38,4 +38,26 @@ class RateComic
             return $rating;
         });
     }
+
+    public function removeRating(User $user, int $comicId): Comic
+    {
+        return DB::transaction(function () use ($user, $comicId) {
+            $comic = Comic::findOrFail($comicId);
+
+            Rating::where('user_id', $user->id)
+                ->where('comic_id', $comic->id)
+                ->delete();
+
+            // Recalculate average rating & total rating count
+            $totalRatings = Rating::where('comic_id', $comic->id)->count();
+            $averageRating = Rating::where('comic_id', $comic->id)->avg('rating') ?: 0.0;
+
+            $comic->update([
+                'total_ratings' => $totalRatings,
+                'rating_average' => round($averageRating, 2),
+            ]);
+
+            return $comic;
+        });
+    }
 }
