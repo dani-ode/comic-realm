@@ -47,6 +47,7 @@ interface Comic {
     name: string;
     publisher_profile?: {
       brand_name?: string;
+      slug?: string;
     };
   };
   published_chapters?: Chapter[];
