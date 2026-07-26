@@ -233,6 +233,18 @@ const submitPasswordUpdate = () => {
             <span v-if="isSidebarOpen">Studio Dashboard</span>
           </Link>
 
+          <!-- Kelola Studio -->
+          <Link
+            href="/publisher/profile"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            :class="page.url.startsWith('/publisher/profile')
+              ? 'bg-sky-600/20 text-sky-400 border border-sky-500/25 shadow-sm'
+              : 'text-slate-400 hover:bg-slate-800/70 hover:text-white'"
+          >
+            <BuildingStorefrontIcon class="w-5 h-5 shrink-0" />
+            <span v-if="isSidebarOpen">Kelola Studio</span>
+          </Link>
+
           <!-- Kelola Komik & Chapter -->
           <Link
             href="/publisher/comics"

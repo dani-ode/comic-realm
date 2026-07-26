@@ -48,6 +48,19 @@ class PublisherApplicationController extends Controller
         return redirect()->route('publisher.dashboard')->with('success', 'Pendaftaran Publisher berhasil! Pengajuan Anda sedang dalam proses verifikasi admin.');
     }
 
+    public function editProfile(Request $request): InertiaResponse|RedirectResponse
+    {
+        $profile = PublisherProfile::where('user_id', $request->user()->id)->first();
+
+        if (! $profile) {
+            return redirect()->route('publisher.apply');
+        }
+
+        return Inertia::render('Publisher/Profile', [
+            'profile' => $profile,
+        ]);
+    }
+
     public function update(Request $request): RedirectResponse
     {
         $request->validate([
@@ -71,6 +84,6 @@ class PublisherApplicationController extends Controller
             'rejection_reason' => null,
         ]);
 
-        return redirect()->route('publisher.dashboard')->with('success', 'Perubahan profil studio berhasil disimpan dan dikirim ulang untuk verifikasi admin.');
+        return redirect()->route('publisher.profile.edit')->with('success', 'Perubahan profil studio berhasil disimpan dan dikirim ulang untuk verifikasi admin.');
     }
 }

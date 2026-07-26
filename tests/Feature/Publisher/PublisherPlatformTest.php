@@ -130,7 +130,7 @@ it('allows rejected publisher to edit and resubmit studio profile details', func
         'bank_account_name' => 'Mahdani Studio',
     ]);
 
-    $response->assertRedirect(route('publisher.dashboard'));
+    $response->assertRedirect(route('publisher.profile.edit'));
 
     expect($profile->fresh())
         ->brand_name->toBe('Updated Studio Realm')
