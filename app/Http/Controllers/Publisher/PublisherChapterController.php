@@ -79,7 +79,7 @@ class PublisherChapterController extends Controller
             $uploadBatch->execute($chapter, $request->file('pages'));
         }
 
-        return redirect()->route('publisher.dashboard')->with('success', "Bab {$chapterNumber} berhasil diterbitkan.");
+        return redirect()->route('publisher.comics.index')->with('success', "Bab {$chapterNumber} berhasil diterbitkan.");
     }
 
     public function uploadPages(UploadChapterPagesRequest $request, UploadChapterPagesBatch $uploadBatch): JsonResponse
@@ -151,7 +151,7 @@ class PublisherChapterController extends Controller
             'price' => $request->input('is_free') ? 0 : (int) $request->input('price'),
         ]);
 
-        return redirect()->route('publisher.dashboard')->with('success', "Bab {$chapter->chapter_number} berhasil diperbarui.");
+        return redirect()->route('publisher.comics.index')->with('success', "Bab {$chapter->chapter_number} berhasil diperbarui.");
     }
 
     public function destroy(int $comicId, int $chapterId, Request $request): RedirectResponse
@@ -167,6 +167,6 @@ class PublisherChapterController extends Controller
 
         $chapter->delete();
 
-        return redirect()->route('publisher.dashboard')->with('success', "Bab {$chapter->chapter_number} telah dihapus.");
+        return redirect()->route('publisher.comics.index')->with('success', "Bab {$chapter->chapter_number} telah dihapus.");
     }
 }

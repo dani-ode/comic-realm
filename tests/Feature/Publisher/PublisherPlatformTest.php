@@ -75,7 +75,7 @@ it('allows approved publisher to create new comic series and publish chapter wit
         'pages' => [$file1, $file2],
     ]);
 
-    $responseChapter->assertRedirect(route('publisher.dashboard'));
+    $responseChapter->assertRedirect(route('publisher.comics.index'));
 
     $this->assertDatabaseHas('chapters', [
         'comic_id' => $comic->id,
