@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Order;
 
+use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Models\Order;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -42,8 +43,10 @@ class OrderController extends Controller
             ->where('order_number', $orderNumber)
             ->firstOrFail();
 
-        if ($order->status === 'pending') {
-            $order->update(['status' => 'cancelled']);
+        $statusStr = $order->status instanceof OrderStatus ? $order->status->value : (string) $order->status;
+
+        if (in_array(strtolower($statusStr), ['pending', 'unpaid'])) {
+            $order->update(['status' => OrderStatus::CANCELLED->value]);
             if ($order->payment) {
                 $order->payment->update(['status' => 'CANCELLED']);
             }

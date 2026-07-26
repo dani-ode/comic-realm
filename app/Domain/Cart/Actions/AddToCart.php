@@ -41,7 +41,7 @@ class AddToCart
             $hasPendingOrder = DB::table('order_items')
                 ->join('orders', 'orders.id', '=', 'order_items.order_id')
                 ->where('orders.user_id', $user->id)
-                ->where('orders.status', 'pending')
+                ->whereIn(DB::raw('LOWER(orders.status)'), ['pending', 'unpaid'])
                 ->where('order_items.chapter_id', $chapter->id)
                 ->where(function ($q) {
                     $q->whereNull('orders.expired_at')->orWhere('orders.expired_at', '>', now());

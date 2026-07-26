@@ -7,7 +7,7 @@ import GenreBadge from '@/Components/Comic/GenreBadge.vue';
 import BookmarkButton from '@/Components/Engagement/BookmarkButton.vue';
 import StarRating from '@/Components/Engagement/StarRating.vue';
 import CommentSection from '@/Components/Engagement/CommentSection.vue';
-import { EyeIcon, LockClosedIcon, ShoppingCartIcon, CheckBadgeIcon } from '@heroicons/vue/24/outline';
+import { EyeIcon, LockClosedIcon, ShoppingCartIcon, CheckBadgeIcon, ClockIcon } from '@heroicons/vue/24/outline';
 import { StarIcon, HeartIcon as HeartIconSolid } from '@heroicons/vue/24/solid';
 import { useToast } from '@/composables/useToast';
 
@@ -76,11 +76,36 @@ const isUnlocked = (chapterId: number, isFree: boolean) => {
   return isFree || (props.unlockedChapterIds && props.unlockedChapterIds.includes(chapterId));
 };
 
+const formatRupiah = (val: any) => {
+  const num = typeof val === 'number' ? val : (parseFloat(val) || 0);
+  return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+};
+
+const activeCartChapterIds = computed(() => {
+  const shared = (page.props as any).cartChapterIds as number[] | undefined;
+  return shared ?? props.cartChapterIds ?? [];
+});
+
+const activePendingOrderChapterIds = computed(() => {
+  const shared = (page.props as any).pendingOrderChapterIds as number[] | undefined;
+  return shared ?? [];
+});
+
 const isInCart = (chapterId: number) => {
-  return props.cartChapterIds && props.cartChapterIds.includes(chapterId);
+  return activeCartChapterIds.value.includes(chapterId);
+};
+
+const isPendingOrder = (chapterId: number) => {
+  return activePendingOrderChapterIds.value.includes(chapterId);
 };
 
 const handleAddToCart = async (chapterId: number) => {
+  if (isPendingOrder(chapterId)) {
+    toastError('Bab ini sudah ada dalam faktur pending Anda. Batalkan pesanan sebelumnya jika ingin membeli ulang.');
+    setTimeout(() => router.get('/orders'), 1200);
+    return;
+  }
+
   if (isInCart(chapterId)) {
     router.get('/cart');
     return;
@@ -100,7 +125,7 @@ const handleAddToCart = async (chapterId: number) => {
   } catch (err: any) {
     if (err.response && err.response.status === 401) {
       toastError('Silakan login terlebih dahulu untuk membeli chapter.');
-      setTimeout(() => router.get('/login'), 1500);
+      setTimeout(() => router.get('/login', { redirect: window.location.pathname }), 1500);
     } else {
       toastError(err.response?.data?.message || 'Gagal menambahkan chapter ke keranjang.');
     }
@@ -252,11 +277,28 @@ const handleBookmarkUpdated = (payload: { bookmarked: boolean; total_bookmarks: 
                 </div>
               </template>
 
+              <!-- PAID + IN PENDING INVOICE -->
+              <template v-else-if="isPendingOrder(ch.id)">
+                <div class="relative flex flex-col items-center gap-0.5">
+                  <span class="text-[10px] font-bold text-amber-400 tracking-wide uppercase">
+                    {{ formatRupiah(ch.price || 5000) }}
+                  </span>
+                  <Link
+                    href="/orders"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition flex items-center gap-1.5"
+                    title="Chapter ini sudah ada di faktur pending. Klik untuk menuju My Orders."
+                  >
+                    <ClockIcon class="w-3.5 h-3.5" />
+                    In Invoice
+                  </Link>
+                </div>
+              </template>
+
               <!-- PAID + IN CART -->
               <template v-else-if="isInCart(ch.id)">
                 <div class="relative flex flex-col items-center gap-0.5">
                   <span class="text-[10px] font-bold text-amber-400 tracking-wide uppercase">
-                    Rp {{ ch.price ? ch.price.toLocaleString('id-ID') : '5.000' }}
+                    {{ formatRupiah(ch.price || 5000) }}
                   </span>
                   <Link
                     href="/cart"
@@ -272,7 +314,7 @@ const handleBookmarkUpdated = (payload: { bookmarked: boolean; total_bookmarks: 
               <template v-else>
                 <div class="relative flex flex-col items-center gap-0.5">
                   <span class="text-[10px] font-bold text-slate-400 tracking-wide uppercase">
-                    Rp {{ ch.price ? ch.price.toLocaleString('id-ID') : '5.000' }}
+                    {{ formatRupiah(ch.price || 5000) }}
                   </span>
                   <button
                     @click="handleAddToCart(ch.id)"

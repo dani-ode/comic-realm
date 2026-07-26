@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import axios from 'axios';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
-import { ShoppingCartIcon } from '@heroicons/vue/24/outline';
+import { ShoppingCartIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
+import { useToast } from '@/composables/useToast';
 
 interface CartItem {
   id: number;
@@ -33,6 +34,9 @@ const props = defineProps<{
   cart?: Cart | null;
 }>();
 
+const page = usePage();
+const { success: toastSuccess } = useToast();
+
 const cartData = ref<Cart | null>(props.cart || null);
 const isLoading = ref(false);
 
@@ -42,6 +46,9 @@ const removeItem = async (chapterId: number) => {
     const res = await axios.delete(`/api/cart/items/${chapterId}`);
     if (res.data && res.data.cart) {
       cartData.value = res.data.cart;
+      (page.props as any).cartCount = res.data.cart.items.length;
+      router.reload({ only: ['cartCount', 'cartChapterIds'] });
+      toastSuccess('Item berhasil dihapus dari keranjang.');
     }
   } catch (err) {
     //
@@ -51,7 +58,7 @@ const removeItem = async (chapterId: number) => {
 };
 
 const clearAll = async () => {
-  if (!confirm('Are you sure you want to clear your cart?')) return;
+  if (!confirm('Apakah Anda yakin ingin mengosongkan keranjang?')) return;
   isLoading.value = true;
   try {
     await axios.delete('/api/cart/clear');
@@ -59,6 +66,9 @@ const clearAll = async () => {
       cartData.value.items = [];
       cartData.value.total_amount = 0;
     }
+    (page.props as any).cartCount = 0;
+    router.reload({ only: ['cartCount', 'cartChapterIds'] });
+    toastSuccess('Keranjang belanja telah dikosongkan.');
   } catch (err) {
     //
   } finally {
@@ -99,16 +109,37 @@ const proceedToCheckout = () => {
             :key="item.id"
             class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-4 transition hover:border-slate-700"
           >
-            <div class="flex items-center gap-4">
-              <!-- Comic Cover Image -->
+            <div class="flex items-center gap-4 min-w-0">
+              <!-- Comic Cover Image Link -->
+              <Link
+                v-if="item.chapter.comic.slug"
+                :href="`/comics/${item.chapter.comic.slug}`"
+                class="shrink-0 group"
+              >
+                <img
+                  :src="item.chapter.comic.cover_image"
+                  :alt="item.chapter.comic.title"
+                  class="w-16 h-24 object-cover rounded-xl border border-slate-800 bg-slate-950 group-hover:border-sky-500/50 group-hover:scale-105 transition duration-300"
+                />
+              </Link>
               <img
+                v-else
                 :src="item.chapter.comic.cover_image"
                 :alt="item.chapter.comic.title"
                 class="w-16 h-24 object-cover rounded-xl border border-slate-800 shrink-0 bg-slate-950"
               />
-              <div>
-                <span class="text-xs text-sky-400 font-medium">{{ item.chapter.comic.title }}</span>
-                <h3 class="text-base font-bold text-white mt-0.5">
+
+              <div class="min-w-0">
+                <Link
+                  v-if="item.chapter.comic.slug"
+                  :href="`/comics/${item.chapter.comic.slug}`"
+                  class="text-xs text-sky-400 font-medium hover:underline block truncate"
+                >
+                  {{ item.chapter.comic.title }}
+                </Link>
+                <span v-else class="text-xs text-sky-400 font-medium block truncate">{{ item.chapter.comic.title }}</span>
+
+                <h3 class="text-sm sm:text-base font-bold text-white mt-0.5 truncate">
                   Chapter {{ item.chapter.chapter_number }}: {{ item.chapter.title }}
                 </h3>
                 <p class="text-xs text-slate-400 mt-1">Digital Access Entitlement</p>
@@ -170,7 +201,8 @@ const proceedToCheckout = () => {
           Explore our comic catalog and add paid webcomic chapters to your shopping cart to continue.
         </p>
         <div class="pt-2">
-          <Link href="/comics" class="px-6 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm transition">
+          <Link href="/comics" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm transition">
+            <Squares2X2Icon class="w-4 h-4" />
             Explore Comic Catalog
           </Link>
         </div>

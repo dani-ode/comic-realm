@@ -42,7 +42,7 @@ const styles = {
 
 <template>
   <!-- Fixed container, top-right, above everything -->
-  <div class="fixed top-20 right-4 z-[9999] flex flex-col gap-3 pointer-events-none w-full max-w-sm">
+  <div class="fixed top-28 right-4 z-[9999] flex flex-col gap-3 pointer-events-none w-full max-w-sm">
     <TransitionGroup
       name="toast"
       tag="div"

@@ -17,6 +17,7 @@ class LoginRequest extends FormRequest
             'login' => ['required', 'string'], // email or username
             'password' => ['required', 'string'],
             'remember' => ['nullable', 'boolean'],
+            'redirect' => ['nullable', 'string'],
         ];
     }
 }

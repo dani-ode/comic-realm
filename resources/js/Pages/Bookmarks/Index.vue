@@ -2,7 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import ComicCard from '@/Components/Comic/ComicCard.vue';
-import { BookmarkIcon, HeartIcon } from '@heroicons/vue/24/outline';
+import { BookmarkIcon, HeartIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
 
 interface Genre {
   id: number;
@@ -72,7 +72,8 @@ defineProps<{
           Start bookmarking your favorite webcomic series to get quick access whenever new chapters release.
         </p>
         <div class="pt-2">
-          <Link href="/comics" class="px-6 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm transition inline-block">
+          <Link href="/comics" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm transition">
+            <Squares2X2Icon class="w-4 h-4" />
             Explore Comic Catalog
           </Link>
         </div>

@@ -21,10 +21,10 @@ class PaymentChannelController extends Controller
         $order = Order::with(['items.comic'])
             ->where('user_id', $request->user()->id)
             ->where('order_number', $orderNumber)
-            ->where('status', 'pending')
+            ->whereIn(\Illuminate\Support\Facades\DB::raw('LOWER(status)'), ['pending', 'unpaid'])
             ->firstOrFail();
 
-        $channels = $this->gateway->getPaymentChannels();
+        $channels = $this->gateway->getPaymentChannels($order->total_amount);
 
         return Inertia::render('Payment/SelectChannel', [
             'order' => $order,

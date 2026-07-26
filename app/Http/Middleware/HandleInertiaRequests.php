@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Domain\Cart\Models\Cart;
+use App\Domain\Comic\Models\Genre;
 use App\Domain\Engagement\Models\Bookmark;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -61,6 +62,35 @@ class HandleInertiaRequests extends Middleware
 
                 return Bookmark::where('user_id', $request->user()->id)
                     ->pluck('comic_id')
+                    ->toArray();
+            },
+            'topGenres' => fn () => Genre::where('is_active', true)
+                ->withCount('comics')
+                ->orderByDesc('comics_count')
+                ->limit(7)
+                ->get(['id', 'name', 'slug']),
+            'cartChapterIds' => function () use ($request) {
+                if (! $request->user()) {
+                    return [];
+                }
+
+                $cart = Cart::where('user_id', $request->user()->id)->first();
+
+                return $cart ? $cart->items()->pluck('chapter_id')->toArray() : [];
+            },
+            'pendingOrderChapterIds' => function () use ($request) {
+                if (! $request->user()) {
+                    return [];
+                }
+
+                return \Illuminate\Support\Facades\DB::table('order_items')
+                    ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                    ->where('orders.user_id', $request->user()->id)
+                    ->whereIn(\Illuminate\Support\Facades\DB::raw('LOWER(orders.status)'), ['pending', 'unpaid'])
+                    ->where(function ($q) {
+                        $q->whereNull('orders.expired_at')->orWhere('orders.expired_at', '>', now());
+                    })
+                    ->pluck('order_items.chapter_id')
                     ->toArray();
             },
         ];

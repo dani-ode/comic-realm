@@ -32,29 +32,59 @@ class TriPayGateway implements PaymentGateway
         ]);
     }
 
-    public function getPaymentChannels(): array
+    public function getPaymentChannels(int $amount = 0): array
     {
         try {
             $merchant = new Merchant($this->client);
             $response = $merchant->paymentChannels();
             $body = json_decode((string) $response->getBody(), true);
 
-            if (isset($body['success']) && $body['success']) {
-                return $body['data'] ?? [];
+            Log::info('TriPay paymentChannels response: ', $body ?? []);
+
+            if (isset($body['success']) && $body['success'] && !empty($body['data'])) {
+                $channels = [];
+                foreach ($body['data'] as $ch) {
+                    $feeFlat = 0;
+                    $feePercent = 0;
+
+                    if (isset($ch['total_fee']) && is_array($ch['total_fee'])) {
+                        $feeFlat = (float) ($ch['total_fee']['flat'] ?? 0);
+                        $feePercent = (float) ($ch['total_fee']['percent'] ?? 0);
+                    } elseif (isset($ch['fee_customer']) && is_array($ch['fee_customer'])) {
+                        $feeFlat = (float) ($ch['fee_customer']['flat'] ?? 0);
+                        $feePercent = (float) ($ch['fee_customer']['percent'] ?? 0);
+                    } elseif (isset($ch['total_fee']) && is_numeric($ch['total_fee'])) {
+                        $feeFlat = (float) $ch['total_fee'];
+                    }
+
+                    $calculatedFee = (int) ceil($feeFlat + ($amount * $feePercent / 100));
+
+                    $ch['fee_flat'] = $feeFlat;
+                    $ch['fee_percent'] = $feePercent;
+                    $ch['total_fee'] = $calculatedFee;
+                    $channels[] = $ch;
+                }
+
+                return $channels;
             }
         } catch (\Throwable $e) {
             Log::error('TriPay getPaymentChannels error: ' . $e->getMessage());
         }
 
         // Mock Fallback Payment Channels if Sandbox/API Key is not configured
+        $qrisFee = (int) ceil($amount * 0.007);
+        if ($qrisFee === 0) {
+            $qrisFee = 750;
+        }
+
         return [
-            ['code' => 'BRIVA', 'name' => 'BRI Virtual Account', 'group' => 'Virtual Account', 'fee_merchant' => 0, 'fee_customer' => 4250, 'total_fee' => 4250, 'active' => true],
-            ['code' => 'BCAVA', 'name' => 'BCA Virtual Account', 'group' => 'Virtual Account', 'fee_merchant' => 0, 'fee_customer' => 4250, 'total_fee' => 4250, 'active' => true],
-            ['code' => 'BNIVA', 'name' => 'BNI Virtual Account', 'group' => 'Virtual Account', 'fee_merchant' => 0, 'fee_customer' => 4250, 'total_fee' => 4250, 'active' => true],
-            ['code' => 'MANDIRIVA', 'name' => 'Mandiri Virtual Account', 'group' => 'Virtual Account', 'fee_merchant' => 0, 'fee_customer' => 4250, 'total_fee' => 4250, 'active' => true],
-            ['code' => 'QRIS', 'name' => 'QRIS (All Payment Apps)', 'group' => 'Convenience Store & E-Wallet', 'fee_merchant' => 0, 'fee_customer' => 750, 'total_fee' => 750, 'active' => true],
-            ['code' => 'ALFAMART', 'name' => 'Alfamart', 'group' => 'Convenience Store', 'fee_merchant' => 0, 'fee_customer' => 3500, 'total_fee' => 3500, 'active' => true],
-            ['code' => 'INDOMARET', 'name' => 'Indomaret', 'group' => 'Convenience Store', 'fee_merchant' => 0, 'fee_customer' => 3500, 'total_fee' => 3500, 'active' => true],
+            ['code' => 'BRIVA', 'name' => 'BRI Virtual Account', 'group' => 'Virtual Account', 'fee_merchant' => 0, 'fee_customer' => 4250, 'fee_flat' => 4250, 'fee_percent' => 0, 'total_fee' => 4250, 'active' => true],
+            ['code' => 'BCAVA', 'name' => 'BCA Virtual Account', 'group' => 'Virtual Account', 'fee_merchant' => 0, 'fee_customer' => 4250, 'fee_flat' => 4250, 'fee_percent' => 0, 'total_fee' => 4250, 'active' => true],
+            ['code' => 'BNIVA', 'name' => 'BNI Virtual Account', 'group' => 'Virtual Account', 'fee_merchant' => 0, 'fee_customer' => 4250, 'fee_flat' => 4250, 'fee_percent' => 0, 'total_fee' => 4250, 'active' => true],
+            ['code' => 'MANDIRIVA', 'name' => 'Mandiri Virtual Account', 'group' => 'Virtual Account', 'fee_merchant' => 0, 'fee_customer' => 4250, 'fee_flat' => 4250, 'fee_percent' => 0, 'total_fee' => 4250, 'active' => true],
+            ['code' => 'QRIS', 'name' => 'QRIS (All Payment Apps)', 'group' => 'Convenience Store & E-Wallet', 'fee_merchant' => 0, 'fee_customer' => $qrisFee, 'fee_flat' => 0, 'fee_percent' => 0.7, 'total_fee' => $qrisFee, 'active' => true],
+            ['code' => 'ALFAMART', 'name' => 'Alfamart', 'group' => 'Convenience Store', 'fee_merchant' => 0, 'fee_customer' => 3500, 'fee_flat' => 3500, 'fee_percent' => 0, 'total_fee' => 3500, 'active' => true],
+            ['code' => 'INDOMARET', 'name' => 'Indomaret', 'group' => 'Convenience Store', 'fee_merchant' => 0, 'fee_customer' => 3500, 'fee_flat' => 3500, 'fee_percent' => 0, 'total_fee' => 3500, 'active' => true],
         ];
     }
 

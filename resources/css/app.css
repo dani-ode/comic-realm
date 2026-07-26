@@ -7,11 +7,23 @@
     color: #f8fafc;
     font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: rgba(56, 189, 248, 0.2);
   }
 
   h1 {
     font-family: 'MedievalSharp', cursive, serif !important;
     letter-spacing: 0.02em;
+  }
+
+  /* Global touch feedback for links and buttons on mobile */
+  a, button, [role="button"] {
+    touch-action: manipulation;
+  }
+
+  a:active, button:active, [role="button"]:active {
+    transform: scale(0.97);
+    opacity: 0.88;
+    transition: transform 0.08s ease-out, opacity 0.08s ease-out;
   }
 }
 

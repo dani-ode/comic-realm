@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage, router } from "@inertiajs/vue3";
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useToast } from "@/composables/useToast";
 import ToastContainer from "@/Components/UI/ToastContainer.vue";
 import {
@@ -15,11 +15,58 @@ import {
     ArrowRightOnRectangleIcon,
     UserCircleIcon,
     BuildingStorefrontIcon,
+    MagnifyingGlassIcon,
+    XMarkIcon,
+    ArrowLeftIcon,
+    ShieldCheckIcon,
 } from "@heroicons/vue/24/outline";
+
+const props = withDefaults(
+    defineProps<{
+        minimal?: boolean;
+        title?: string;
+        backUrl?: string;
+    }>(),
+    {
+        minimal: false,
+        title: "",
+        backUrl: "",
+    }
+);
+
+const handleBack = () => {
+    if (props.backUrl) {
+        router.get(props.backUrl);
+    } else if (typeof window !== "undefined" && window.history.length > 1) {
+        window.history.back();
+    } else {
+        router.get("/cart");
+    }
+};
 
 const page = usePage();
 const isDropdownOpen = ref(false);
 const dropdownRef = ref<HTMLElement | null>(null);
+
+const isSearchModalOpen = ref(false);
+const searchInputRef = ref<HTMLInputElement | null>(null);
+const searchQuery = ref("");
+
+const openSearchModal = () => {
+    isSearchModalOpen.value = true;
+    nextTick(() => {
+        if (searchInputRef.value) {
+            searchInputRef.value.focus();
+        }
+    });
+};
+
+const handleSearchSubmit = () => {
+    const q = searchQuery.value.trim();
+    if (!q) return;
+    isSearchModalOpen.value = false;
+    router.get('/comics', { search: q });
+};
 
 const toggleDropdown = () => {
     isDropdownOpen.value = !isDropdownOpen.value;
@@ -54,6 +101,9 @@ watch(
     },
     { deep: true, immediate: true },
 );
+const topGenres = computed(() => {
+    return ((page.props as any).topGenres as Array<{ id: number; name: string; slug: string }>) || [];
+});
 </script>
 
 <template>
@@ -61,12 +111,52 @@ watch(
         <!-- Global Toast Notifications -->
         <ToastContainer />
 
-        <!-- Navbar -->
+        <!-- Minimal Checkout Header -->
         <header
-            class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 flex items-center justify-between"
+            v-if="minimal"
+            class="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 flex items-center justify-between"
+        >
+            <div class="flex items-center gap-3">
+                <!-- Back Button -->
+                <button
+                    @click="handleBack"
+                    class="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition active:scale-95 shrink-0"
+                    title="Kembali"
+                >
+                    <ArrowLeftIcon class="w-4 h-4" />
+                </button>
+
+                <div class="flex items-center gap-2.5">
+                    <Link href="/" class="shrink-0">
+                        <img
+                            src="/favicon.ico"
+                            alt="ComicRealm"
+                            class="w-7 h-7 rounded-xl object-contain shadow-md shadow-sky-500/20"
+                        />
+                    </Link>
+                    <div>
+                        <h1 class="text-sm sm:text-base font-extrabold text-white leading-none">
+                            {{ title || "Checkout Order" }}
+                        </h1>
+                        <p class="text-[10px] text-slate-400 mt-0.5">The ComicRealm Transaction</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secure Badge -->
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl shrink-0">
+                <ShieldCheckIcon class="w-4 h-4 shrink-0" />
+                <span class="hidden sm:inline">Pembayaran Aman</span>
+            </div>
+        </header>
+
+        <!-- Standard Navbar -->
+        <header
+            v-else
+            class="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3.5 flex items-center justify-between gap-4"
         >
             <!-- Logo -->
-            <Link href="/" class="flex items-center gap-2">
+            <Link href="/" class="flex items-center gap-2 shrink-0">
                 <img
                     src="/favicon.ico"
                     alt="ComicRealm"
@@ -79,55 +169,44 @@ watch(
                 </span>
             </Link>
 
-            <!-- Nav Links -->
-            <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
-                <Link
-                    href="/"
-                    class="text-slate-300 hover:text-white transition"
-                    :class="
-                        usePage().url === '/' ? 'text-sky-400 font-bold' : ''
-                    "
-                >
-                    Home
-                </Link>
+            <!-- Nav Links (Catalog + Top 10 Most Used Genres) -->
+            <nav class="hidden md:flex items-center gap-3 text-xs font-semibold overflow-x-auto scrollbar-none py-1">
                 <Link
                     href="/comics"
-                    class="text-slate-300 hover:text-white transition"
+                    class="text-slate-300 hover:text-white transition whitespace-nowrap shrink-0 px-2.5 py-1 rounded-lg"
                     :class="
-                        usePage().url.startsWith('/comics')
-                            ? 'text-sky-400 font-bold'
+                        page.url === '/comics'
+                            ? 'text-sky-400 font-extrabold bg-sky-500/10 border border-sky-500/20'
                             : ''
                     "
                 >
                     Catalog
                 </Link>
                 <Link
-                    href="/library"
-                    class="flex items-center gap-1.5 text-slate-300 hover:text-white transition"
+                    v-for="genre in topGenres"
+                    :key="genre.id"
+                    :href="`/comics?genre=${genre.slug}`"
+                    class="text-slate-300 hover:text-white transition whitespace-nowrap shrink-0 px-2.5 py-1 rounded-lg"
                     :class="
-                        usePage().url.startsWith('/library')
-                            ? 'text-sky-400 font-bold'
+                        page.url.includes(`genre=${genre.slug}`)
+                            ? 'text-sky-400 font-extrabold bg-sky-500/10 border border-sky-500/20'
                             : ''
                     "
                 >
-                    <BookOpenIcon class="w-4 h-4" />
-                    My Library
-                </Link>
-                <Link
-                    href="/bookmarks"
-                    class="flex items-center gap-1.5 text-slate-300 hover:text-white transition"
-                    :class="
-                        usePage().url.startsWith('/bookmarks')
-                            ? 'text-sky-400 font-bold'
-                            : ''
-                    "
-                >
-                    <HeartIcon class="w-4 h-4 text-rose-400" />
-                    Bookmarks
+                    {{ genre.name }}
                 </Link>
             </nav>
 
             <div class="flex items-center gap-3">
+                <!-- Search Button -->
+                <button
+                    @click="openSearchModal"
+                    class="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition active:scale-95 shrink-0"
+                    title="Search Comics"
+                >
+                    <MagnifyingGlassIcon class="w-4 h-4" />
+                </button>
+
                 <!-- Cart Button -->
                 <Link
                     href="/cart"
@@ -206,6 +285,17 @@ watch(
                         <!-- Links -->
                         <div class="py-1">
                             <Link
+                                href="/profile"
+                                @click="isDropdownOpen = false"
+                                class="flex items-center gap-2.5 px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                            >
+                                <UserCircleIcon
+                                    class="w-4 h-4 shrink-0 text-slate-400"
+                                />
+                                My Profile & Settings
+                            </Link>
+
+                            <Link
                                 href="/orders"
                                 @click="isDropdownOpen = false"
                                 class="flex items-center gap-2.5 px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition"
@@ -256,7 +346,7 @@ watch(
                                 class="flex items-center gap-2.5 px-4 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition"
                             >
                                 <HeartIcon
-                                    class="w-4 h-4 shrink-0 text-rose-400"
+                                    class="w-4 h-4 shrink-0 text-slate-400"
                                 />
                                 My Bookmarks
                             </Link>
@@ -299,6 +389,26 @@ watch(
             </div>
         </header>
 
+        <!-- Mobile Nav Bar (Catalog + Top 10 Most Used Genres) -->
+        <nav v-if="!minimal" class="md:hidden bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-3 py-2 flex items-center gap-2 text-xs font-medium overflow-x-auto shrink-0 sticky top-[57px] z-40 scrollbar-none">
+            <Link
+                href="/comics"
+                class="px-3 py-1 rounded-lg transition whitespace-nowrap shrink-0"
+                :class="page.url === '/comics' ? 'bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20' : 'text-slate-400 hover:text-white'"
+            >
+                Catalog
+            </Link>
+            <Link
+                v-for="genre in topGenres"
+                :key="genre.id"
+                :href="`/comics?genre=${genre.slug}`"
+                class="px-3 py-1 rounded-lg transition whitespace-nowrap shrink-0"
+                :class="page.url.includes(`genre=${genre.slug}`) ? 'bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20' : 'text-slate-400 hover:text-white'"
+            >
+                {{ genre.name }}
+            </Link>
+        </nav>
+
         <!-- Page Content -->
         <main class="flex-1">
             <slot />
@@ -322,5 +432,53 @@ watch(
                 >
             </div>
         </footer>
+
+        <!-- Search Popup Modal -->
+        <Teleport to="body">
+            <div
+                v-if="isSearchModalOpen"
+                class="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-start justify-center pt-24 px-4"
+                @click.self="isSearchModalOpen = false"
+            >
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl w-full max-w-lg space-y-4 relative">
+                    <!-- Modal Header -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-sky-400 flex items-center gap-1.5">
+                            <MagnifyingGlassIcon class="w-4 h-4" /> Search Comic Catalog
+                        </span>
+                        <button
+                            @click="isSearchModalOpen = false"
+                            class="text-slate-400 hover:text-white transition p-1"
+                        >
+                            <XMarkIcon class="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <!-- Search Input Form -->
+                    <form @submit.prevent="handleSearchSubmit" class="relative">
+                        <input
+                            ref="searchInputRef"
+                            v-model="searchQuery"
+                            type="text"
+                            placeholder="Enter comic title, author, or keyword..."
+                            class="w-full rounded-2xl bg-slate-950 border border-slate-700 pl-11 pr-24 py-3.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                            @keydown.escape="isSearchModalOpen = false"
+                        />
+                        <MagnifyingGlassIcon class="w-5 h-5 text-slate-500 absolute left-3.5 top-3.5" />
+                        <button
+                            type="submit"
+                            class="absolute right-2 top-2 bottom-2 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition flex items-center gap-1"
+                        >
+                            <span>Search</span>
+                        </button>
+                    </form>
+
+                    <div class="text-[11px] text-slate-500 flex items-center justify-between pt-1">
+                        <span>Press <kbd class="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 font-mono text-[10px]">Enter</kbd> to view results</span>
+                        <span>Press <kbd class="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 font-mono text-[10px]">ESC</kbd> to close</span>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
     </div>
 </template>

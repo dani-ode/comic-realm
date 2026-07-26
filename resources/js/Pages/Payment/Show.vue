@@ -30,7 +30,7 @@ defineProps<{
 <template>
   <Head :title="`Payment ${payment.tripay_reference}`" />
 
-  <PublicLayout>
+  <PublicLayout minimal title="Instruksi Pembayaran" backUrl="/orders">
     <main class="max-w-3xl mx-auto px-4 lg:px-8 py-10 w-full flex-1 space-y-8">
       <div class="text-center space-y-2">
         <span class="px-3 py-1 text-xs font-bold rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30 uppercase tracking-wider">

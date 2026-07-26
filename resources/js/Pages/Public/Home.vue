@@ -87,7 +87,7 @@ defineProps<{
           <div class="space-y-4 max-w-xl text-center md:text-left z-10">
             <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/30">
               <BoltIcon class="w-3.5 h-3.5" />
-              v0.1.0
+              ComicRealm-v1.1.0
             </span>
             <h1 class="text-3xl lg:text-5xl font-black text-white leading-tight">
               Unfold the Next Era of Vertical Storytelling
@@ -122,7 +122,7 @@ defineProps<{
                 class="flex items-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition"
               >
                 <PencilSquareIcon class="w-4 h-4" />
-                Publish Your Webcomic
+                The Creator’s Sanctuary
               </Link>
             </div>
           </div>

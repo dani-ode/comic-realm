@@ -67,7 +67,7 @@ const submitComment = async (parentId: number | null = null) => {
     fetchComments();
   } catch (err: any) {
     if (err.response && err.response.status === 401) {
-      window.location.href = '/login';
+      window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
     }
   } finally {
     isLoading.value = false;

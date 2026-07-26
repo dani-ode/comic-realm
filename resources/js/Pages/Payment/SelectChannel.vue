@@ -1,8 +1,18 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import axios from 'axios';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
+import {
+  CreditCardIcon,
+  ShieldCheckIcon,
+  QrCodeIcon,
+  BuildingLibraryIcon,
+  ArrowRightIcon,
+  CheckCircleIcon,
+  SparklesIcon,
+} from '@heroicons/vue/24/outline';
+import { useToast } from '@/composables/useToast';
 
 interface Channel {
   code: string;
@@ -26,14 +36,87 @@ const props = defineProps<{
   channels: Channel[];
 }>();
 
-const selectedCode = ref('');
+const { error: toastError } = useToast();
+const selectedCode = ref(props.channels?.[0]?.code || '');
 const isLoading = ref(false);
-const errorMessage = ref('');
+
+const selectedChannel = computed(() => {
+  return props.channels.find(c => c.code === selectedCode.value) || null;
+});
+
+const getChannelFee = (ch: any) => {
+  if (!ch) return 0;
+  const amount = props.order?.total_amount || 0;
+
+  let flat = 0;
+  let percent = 0;
+
+  if (ch.fee_flat !== undefined) {
+    flat = Number(ch.fee_flat) || 0;
+  }
+  if (ch.fee_percent !== undefined) {
+    percent = Number(ch.fee_percent) || 0;
+  }
+
+  const feeObj = ch.total_fee ?? ch.fee_customer;
+  if (typeof feeObj === 'object' && feeObj !== null) {
+    flat = Number(feeObj.flat) || flat;
+    percent = Number(feeObj.percent) || percent;
+  } else if (typeof feeObj === 'number' && flat === 0 && percent === 0) {
+    return feeObj;
+  }
+
+  return Math.ceil(flat + (amount * percent / 100));
+};
+
+const getChannelPercent = (ch: any) => {
+  if (!ch) return 0;
+  if (ch.fee_percent !== undefined && Number(ch.fee_percent) > 0) {
+    return Number(ch.fee_percent);
+  }
+  const feeObj = ch.total_fee ?? ch.fee_customer;
+  if (typeof feeObj === 'object' && feeObj !== null && Number(feeObj.percent) > 0) {
+    return Number(feeObj.percent);
+  }
+  return 0;
+};
+
+const grandTotal = computed(() => {
+  const fee = getChannelFee(selectedChannel.value);
+  return (props.order?.total_amount || 0) + fee;
+});
+
+const formatRupiah = (val: any) => {
+  let num = 0;
+  if (typeof val === 'number') {
+    num = val;
+  } else if (typeof val === 'object' && val !== null) {
+    num = parseFloat(val.flat) || parseFloat(val.total) || 0;
+  } else {
+    num = parseFloat(val) || 0;
+  }
+  return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+};
+
+// Group channels logically
+const groupedChannels = computed(() => {
+  const groups: Record<string, Channel[]> = {};
+  props.channels.forEach(ch => {
+    const grpName = ch.group || 'Other Payment Methods';
+    if (!groups[grpName]) {
+      groups[grpName] = [];
+    }
+    groups[grpName].push(ch);
+  });
+  return groups;
+});
 
 const processPayment = async () => {
-  if (!selectedCode.value) return;
+  if (!selectedCode.value) {
+    toastError('Silakan pilih metode pembayaran terlebih dahulu.');
+    return;
+  }
   isLoading.value = true;
-  errorMessage.value = '';
 
   try {
     const res = await axios.post('/api/payment/process', {
@@ -45,11 +128,8 @@ const processPayment = async () => {
       window.location.href = res.data.redirect_url;
     }
   } catch (err: any) {
-    if (err.response && err.response.data && err.response.data.message) {
-      errorMessage.value = err.response.data.message;
-    } else {
-      errorMessage.value = 'Gagal memproses transaksi pembayaran.';
-    }
+    const msg = err.response?.data?.message || 'Gagal memproses transaksi pembayaran. Silakan coba lagi.';
+    toastError(msg);
   } finally {
     isLoading.value = false;
   }
@@ -57,66 +137,128 @@ const processPayment = async () => {
 </script>
 
 <template>
-  <Head title="Select Payment Method - TriPay Gateway" />
+  <Head title="Select Payment Channel - TriPay Gateway" />
 
-  <PublicLayout>
+  <PublicLayout minimal title="Pilih Metode Pembayaran" backUrl="/checkout">
     <main class="max-w-4xl mx-auto px-4 lg:px-8 py-10 w-full flex-1 space-y-8">
-      <div>
-        <span class="text-xs text-sky-400 font-semibold tracking-wider uppercase">TriPay Gateway</span>
-        <h1 class="text-3xl font-extrabold text-white">Select Payment Channel</h1>
-        <p class="text-sm text-slate-400 mt-1">Invoice: <strong class="text-white">{{ order.order_number }}</strong> • Total: <strong class="text-amber-400">Rp {{ order.total_amount ? order.total_amount.toLocaleString() : '0' }}</strong></p>
+      <!-- Top Order Summary Banner -->
+      <div class="bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-6 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/30">
+            <ShieldCheckIcon class="w-3.5 h-3.5" />
+            TriPay Payment Gateway
+          </span>
+          <h1 class="text-xl sm:text-2xl font-extrabold text-white mt-2">Pilih Metode Pembayaran</h1>
+          <p class="text-xs text-slate-400 mt-1 font-mono">Invoice: #{{ order.order_number }}</p>
+        </div>
+
+        <div class="text-left md:text-right border-t md:border-t-0 border-slate-800/80 pt-3 md:pt-0">
+          <span class="text-xs text-slate-400 block">Total Tagihan (Termasuk Admin Fee):</span>
+          <span class="text-2xl font-black text-amber-400">{{ formatRupiah(grandTotal) }}</span>
+        </div>
       </div>
 
-      <div v-if="errorMessage" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-sm">
-        {{ errorMessage }}
-      </div>
-
-      <!-- Payment Channel Grid -->
+      <!-- Payment Channels by Group -->
       <div v-if="channels && channels.length" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label
-            v-for="ch in channels"
-            :key="ch.code"
-            class="relative bg-slate-900 border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition"
-            :class="[
-              selectedCode === ch.code
-                ? 'border-sky-500 bg-sky-500/10 shadow-lg shadow-sky-500/10'
-                : 'border-slate-800 hover:border-slate-700'
-            ]"
-          >
-            <div class="flex items-center gap-3">
+        <div v-for="(groupList, groupName) in groupedChannels" :key="groupName" class="space-y-3">
+          <h3 class="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2">
+            <BuildingLibraryIcon v-if="groupName.toLowerCase().includes('virtual')" class="w-4 h-4 text-sky-400" />
+            <QrCodeIcon v-else-if="groupName.toLowerCase().includes('qris') || groupName.toLowerCase().includes('wallet')" class="w-4 h-4 text-sky-400" />
+            <CreditCardIcon v-else class="w-4 h-4 text-sky-400" />
+            {{ groupName }}
+          </h3>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label
+              v-for="ch in groupList"
+              :key="ch.code"
+              class="relative bg-slate-900/90 border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition select-none group"
+              :class="[
+                selectedCode === ch.code
+                  ? 'border-sky-500 bg-sky-500/10 shadow-xl shadow-sky-500/10 ring-1 ring-sky-500/50'
+                  : 'border-slate-800/80 hover:border-slate-700/80 hover:bg-slate-800/40'
+              ]"
+            >
+              <div class="flex items-center gap-3.5 min-w-0">
+                <!-- Custom Check Radio -->
+                <div class="w-5 h-5 rounded-full border border-slate-700 flex items-center justify-center shrink-0 bg-slate-950"
+                  :class="selectedCode === ch.code ? 'border-sky-500 bg-sky-600' : ''"
+                >
+                  <CheckCircleIcon v-if="selectedCode === ch.code" class="w-4 h-4 text-white" />
+                </div>
+
+                <!-- Channel Icon if available -->
+                <img
+                  v-if="ch.icon_url"
+                  :src="ch.icon_url"
+                  :alt="ch.name"
+                  class="w-10 h-7 object-contain bg-slate-950 border border-slate-800 rounded-lg p-1 shrink-0"
+                />
+
+                <div class="min-w-0">
+                  <h4 class="font-bold text-white text-xs sm:text-sm truncate group-hover:text-sky-300 transition">{{ ch.name }}</h4>
+                  <span v-if="getChannelPercent(ch) > 0" class="text-[10px] text-amber-400 font-medium block truncate">
+                    Fee {{ getChannelPercent(ch) }}% (Persentase)
+                  </span>
+                  <span v-else class="text-[10px] text-slate-500 block truncate">Biaya Tetap (Flat Fee)</span>
+                </div>
+              </div>
+
+              <!-- Fee Pill -->
+              <div class="text-right shrink-0">
+                <span class="text-[11px] font-semibold text-slate-400 bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg block">
+                  +{{ formatRupiah(getChannelFee(ch)) }}
+                </span>
+                <span v-if="getChannelPercent(ch) > 0" class="text-[10px] text-amber-400/90 font-medium block mt-0.5 text-right">
+                  ({{ getChannelPercent(ch) }}%)
+                </span>
+              </div>
+
               <input
                 type="radio"
                 name="payment_channel"
                 :value="ch.code"
                 v-model="selectedCode"
-                class="h-4 w-4 text-sky-600 bg-slate-950 border-slate-800 focus:ring-sky-500"
+                class="sr-only"
               />
-              <div>
-                <h3 class="font-bold text-white text-sm">{{ ch.name }}</h3>
-                <span class="text-xs text-slate-400">{{ ch.group }}</span>
-              </div>
-            </div>
-
-            <div class="text-right">
-              <span class="text-xs font-semibold text-slate-300">
-                + Rp {{ ch.total_fee ? ch.total_fee.toLocaleString() : '0' }} Fee
-              </span>
-            </div>
-          </label>
+            </label>
+          </div>
         </div>
 
-        <button
-          @click="processPayment"
-          :disabled="!selectedCode || isLoading"
-          class="w-full py-4 rounded-xl text-base font-bold text-white bg-sky-600 hover:bg-sky-500 disabled:opacity-50 transition shadow-xl shadow-sky-600/30 flex items-center justify-center gap-2"
-        >
-          {{ isLoading ? 'Generating Payment Code...' : 'Generate Pay Code / QRIS →' }}
-        </button>
+        <!-- Submit Process Payment Button -->
+        <div class="pt-4 space-y-3">
+          <button
+            @click="processPayment"
+            :disabled="!selectedCode || isLoading"
+            class="w-full py-4 px-6 rounded-2xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 focus:outline-none disabled:opacity-50 transition shadow-xl shadow-sky-600/30 active:scale-[0.98] flex items-center justify-center gap-2"
+          >
+            <CreditCardIcon class="w-5 h-5 shrink-0" />
+            <span v-if="isLoading">Generating Payment Code...</span>
+            <template v-else>
+              <!-- Mobile Label -->
+              <span class="sm:hidden">Pay {{ formatRupiah(grandTotal) }}</span>
+              <!-- Desktop Label -->
+              <span class="hidden sm:inline">Generate Pay Code / QRIS ({{ formatRupiah(grandTotal) }})</span>
+              <ArrowRightIcon class="w-4 h-4 shrink-0" />
+            </template>
+          </button>
+
+          <p class="text-center text-[11px] text-slate-500 flex items-center justify-center gap-1">
+            <ShieldCheckIcon class="w-3.5 h-3.5 text-emerald-400" />
+            Licensed & Encrypted via TriPay Payment Gateway
+          </p>
+        </div>
       </div>
 
-      <div v-else class="bg-slate-900/40 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
-        No payment channels available at the moment.
+      <!-- Empty Channels State -->
+      <div v-else class="bg-slate-900/60 border border-slate-800 rounded-3xl p-16 text-center space-y-4">
+        <div class="w-16 h-16 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-center mx-auto">
+          <CreditCardIcon class="w-8 h-8 text-slate-500" />
+        </div>
+        <h2 class="text-xl font-bold text-white">No Payment Channels Available</h2>
+        <p class="text-sm text-slate-400 max-w-md mx-auto">
+          Unable to fetch TriPay payment channels at the moment. Please try again later.
+        </p>
       </div>
     </main>
   </PublicLayout>

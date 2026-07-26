@@ -38,13 +38,16 @@ const isBookmarked = computed(() => {
 </script>
 
 <template>
-  <div class="group relative bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg hover:border-sky-500/50 transition duration-300 flex flex-col h-full w-full">
-    <!-- Image Cover — clicking goes to comic page -->
-    <Link :href="`/comics/${comic.slug}`" class="relative aspect-[2/3] w-full overflow-hidden bg-slate-950 block shrink-0">
+  <Link
+    :href="`/comics/${comic.slug}`"
+    class="group relative bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg hover:border-sky-500/50 active:border-sky-500 active:scale-[0.97] active:shadow-sky-500/20 transition-all duration-200 flex flex-col h-full w-full touch-manipulation select-none"
+  >
+    <!-- Image Cover -->
+    <div class="relative aspect-[2/3] w-full overflow-hidden bg-slate-950 block shrink-0">
       <img
         :src="comic.cover_image"
         :alt="comic.title"
-        class="h-full w-full object-cover group-hover:scale-105 transition duration-500"
+        class="h-full w-full object-cover group-hover:scale-105 group-active:scale-105 transition duration-500"
         loading="lazy"
       />
       <!-- Rating Badge -->
@@ -64,7 +67,7 @@ const isBookmarked = computed(() => {
       <div class="absolute bottom-2 left-2 bg-slate-950/80 backdrop-blur-md text-slate-300 text-[10px] px-2 py-0.5 rounded-md border border-slate-700 capitalize">
         {{ comic.status }}
       </div>
-    </Link>
+    </div>
 
     <!-- Content -->
     <div class="p-2.5 flex flex-col flex-1">
@@ -79,9 +82,9 @@ const isBookmarked = computed(() => {
         </span>
       </div>
 
-      <!-- Title — smaller, link whole title -->
-      <h3 class="text-xs font-bold text-white group-hover:text-sky-400 transition line-clamp-2 leading-snug">
-        <Link :href="`/comics/${comic.slug}`">{{ comic.title }}</Link>
+      <!-- Title -->
+      <h3 class="text-xs font-bold text-white group-hover:text-sky-400 group-active:text-sky-400 transition line-clamp-2 leading-snug">
+        {{ comic.title }}
       </h3>
 
       <!-- Views -->
@@ -90,5 +93,5 @@ const isBookmarked = computed(() => {
         {{ comic.total_views ? comic.total_views.toLocaleString() : 0 }}
       </div>
     </div>
-  </div>
+  </Link>
 </template>

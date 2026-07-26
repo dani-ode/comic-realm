@@ -3,7 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import ComicCard from '@/Components/Comic/ComicCard.vue';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
+import { XMarkIcon, Squares2X2Icon } from '@heroicons/vue/24/outline';
 
 interface Genre {
   id: number;
@@ -75,7 +75,12 @@ const clearFilter = (filterKey: 'genre' | 'search' | 'status' | 'all') => {
   <PublicLayout>
     <main class="max-w-7xl mx-auto px-4 lg:px-8 py-10 w-full flex-1 space-y-8">
       <div>
-        <h1 class="text-3xl font-extrabold text-white">Comic Catalog</h1>
+        <h1 class="text-3xl font-extrabold text-white flex items-center gap-3">
+          <span class="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center shrink-0">
+            <Squares2X2Icon class="w-5 h-5 text-sky-400" />
+          </span>
+          Comic Catalog
+        </h1>
         <p class="text-sm text-slate-400 mt-1">Browse all available webcomics, filter by genre or popularity</p>
       </div>
 

@@ -49,3 +49,20 @@ it('fails authentication with invalid credentials and returns validation error',
     $response->assertSessionHasErrors('login');
     $this->assertGuest();
 });
+
+it('redirects to intended URL after successful login', function () {
+    $user = User::factory()->create([
+        'username' => 'intendeduser',
+        'email' => 'intended@example.com',
+        'password' => bcrypt('password123'),
+    ]);
+
+    $response = $this->post('/login', [
+        'login' => 'intended@example.com',
+        'password' => 'password123',
+        'redirect' => '/cart',
+    ]);
+
+    $response->assertRedirect('/cart');
+    $this->assertAuthenticatedAs($user);
+});

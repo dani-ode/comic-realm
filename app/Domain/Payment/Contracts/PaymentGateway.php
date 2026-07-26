@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 interface PaymentGateway
 {
-    public function getPaymentChannels(): array;
+    public function getPaymentChannels(int $amount = 0): array;
 
     public function calculateFee(int $amount, ?string $channelCode = null): array;
 

@@ -9,8 +9,18 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
+
 class ProfileController extends Controller
 {
+    public function edit(Request $request): InertiaResponse
+    {
+        return Inertia::render('Profile/Edit', [
+            'user' => $request->user(),
+        ]);
+    }
+
     public function updateProfile(Request $request): RedirectResponse
     {
         $user = $request->user();
