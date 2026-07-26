@@ -26,3 +26,17 @@ it('renders comic detail page by slug', function () {
 
     $response->assertStatus(200);
 });
+
+it('renders public studio profile page', function () {
+    $publisher = \App\Domain\User\Models\User::factory()->create(['role' => 'publisher']);
+    \App\Domain\Publisher\Models\PublisherProfile::create([
+        'user_id' => $publisher->id,
+        'brand_name' => 'Test Studio',
+        'slug' => 'test-studio',
+    ]);
+    Comic::factory()->create(['publisher_id' => $publisher->id, 'publication_status' => 'published']);
+
+    $response = $this->get("/studios/{$publisher->id}");
+
+    $response->assertStatus(200);
+});

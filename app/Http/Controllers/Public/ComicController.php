@@ -31,7 +31,7 @@ class ComicController extends Controller
         $comic = Comic::query()
             ->with([
                 'genres',
-                'publisher',
+                'publisher' => fn ($q) => $q->with('publisherProfile'),
                 'publishedChapters' => fn ($q) => $q->orderBy('chapter_number', 'desc'),
             ])
             ->where('slug', $slug)

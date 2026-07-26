@@ -42,7 +42,13 @@ interface Comic {
   total_views: number;
   total_bookmarks: number;
   genres?: Genre[];
-  publisher?: { name: string };
+  publisher?: {
+    id: number;
+    name: string;
+    publisher_profile?: {
+      brand_name?: string;
+    };
+  };
   published_chapters?: Chapter[];
 }
 
@@ -147,6 +153,12 @@ const handleBookmarkUpdated = (payload: { bookmarked: boolean; total_bookmarks: 
           </p>
 
           <div class="flex flex-wrap items-center gap-6 text-sm text-slate-300 py-1">
+            <span v-if="comic.publisher">
+              Studio: 
+              <Link :href="`/studios/${comic.publisher.id}`" class="text-sky-400 font-bold hover:underline inline-flex items-center gap-1">
+                🎨 {{ comic.publisher.publisher_profile?.brand_name || comic.publisher.name }}
+              </Link>
+            </span>
             <span>Author: <strong class="text-white">{{ comic.author_name || 'Unknown' }}</strong></span>
             <span>Artist: <strong class="text-white">{{ comic.artist_name || 'Unknown' }}</strong></span>
             <span>Status: <strong class="text-sky-400 capitalize">{{ comic.status }}</strong></span>

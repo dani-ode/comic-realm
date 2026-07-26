@@ -54,6 +54,11 @@ class User extends Authenticatable
         return $this->hasOne(Profile::class);
     }
 
+    public function publisherProfile(): HasOne
+    {
+        return $this->hasOne(\App\Domain\Publisher\Models\PublisherProfile::class, 'user_id');
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === UserRole::ADMIN;
