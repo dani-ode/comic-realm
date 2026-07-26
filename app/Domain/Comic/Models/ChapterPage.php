@@ -22,6 +22,10 @@ class ChapterPage extends Model
         'mime_type',
     ];
 
+    protected $appends = [
+        'formatted_url',
+    ];
+
     protected static function newFactory(): ChapterPageFactory
     {
         return ChapterPageFactory::new();
