@@ -38,14 +38,14 @@ const props = defineProps<{
 const search = ref(props.filters.search || '');
 const selectedGenre = ref(props.filters.genre || '');
 const selectedStatus = ref(props.filters.status || '');
-const selectedSort = ref(props.filters.sort || '');
+const selectedSort = ref(props.filters.sort || 'latest');
 
 // Sync local refs when props.filters changes (e.g. via direct genre link click)
 watch(() => props.filters, (newFilters) => {
   search.value = newFilters.search || '';
   selectedGenre.value = newFilters.genre || '';
   selectedStatus.value = newFilters.status || '';
-  selectedSort.value = newFilters.sort || '';
+  selectedSort.value = newFilters.sort || 'latest';
 }, { deep: true });
 
 const applyFilters = () => {
@@ -116,12 +116,12 @@ const clearFilter = (filterKey: 'genre' | 'search' | 'status' | 'all') => {
           <!-- Sort Select -->
           <select
             v-model="selectedSort"
-            class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
+            class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium"
           >
-            <option value="">Latest Release</option>
-            <option value="popular">Most Views</option>
-            <option value="rating">Highest Rating</option>
-            <option value="oldest">Oldest</option>
+            <option value="latest">Latest Release (Terbaru)</option>
+            <option value="popular">Most Views (Terpopuler)</option>
+            <option value="rating">Highest Rating (Rating Tertinggi)</option>
+            <option value="oldest">Oldest (Terlama)</option>
           </select>
         </div>
       </div>

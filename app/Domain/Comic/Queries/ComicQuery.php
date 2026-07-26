@@ -62,12 +62,13 @@ class ComicQuery
             })
             ->when(! empty($filters['sort']), function (Builder $query) use ($filters) {
                 match ($filters['sort']) {
-                    'popular' => $query->orderByDesc('total_views'),
-                    'rating' => $query->orderByDesc('rating_average'),
-                    'oldest' => $query->oldest('published_at'),
-                    default => $query->latest('published_at'),
+                    'popular' => $query->orderByDesc('total_views')->latest('id'),
+                    'rating' => $query->orderByDesc('rating_average')->latest('id'),
+                    'oldest' => $query->oldest('published_at')->oldest('id'),
+                    'latest' => $query->latest('published_at')->latest('id'),
+                    default => $query->latest('published_at')->latest('id'),
                 };
-            }, fn (Builder $query) => $query->latest('published_at'))
+            }, fn (Builder $query) => $query->latest('published_at')->latest('id'))
             ->paginate($perPage)
             ->withQueryString();
     }
