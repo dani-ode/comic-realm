@@ -27,5 +27,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/publisher/comics/{comicId}/chapters/{chapterId}', [PublisherChapterController::class, 'destroy'])->name('publisher.chapters.destroy');
 
         Route::post('/api/publisher/chapters/pages', [PublisherChapterController::class, 'uploadPages'])->name('publisher.chapters.pages');
+
+        Route::post('/publisher/comics/{comicId}/chapters/{chapterId}/pages/upload', [PublisherChapterController::class, 'uploadPagesRealtime'])->name('publisher.chapters.pages.upload');
+        Route::delete('/publisher/comics/{comicId}/chapters/{chapterId}/pages/{pageId}', [PublisherChapterController::class, 'deletePageRealtime'])->name('publisher.chapters.pages.delete');
+        Route::post('/publisher/comics/{comicId}/chapters/{chapterId}/pages/reorder', [PublisherChapterController::class, 'reorderPagesRealtime'])->name('publisher.chapters.pages.reorder');
     });
 });

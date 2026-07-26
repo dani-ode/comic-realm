@@ -169,4 +169,60 @@ class PublisherChapterController extends Controller
 
         return redirect()->route('publisher.comics.index')->with('success', "Bab {$chapter->chapter_number} telah dihapus.");
     }
+
+    public function uploadPagesRealtime(int $comicId, int $chapterId, Request $request, UploadChapterPagesBatch $uploadBatch): JsonResponse
+    {
+        $user = $request->user();
+        $comic = Comic::where('id', $comicId)->where('publisher_id', $user->id)->firstOrFail();
+        $chapter = Chapter::where('id', $chapterId)->where('comic_id', $comic->id)->firstOrFail();
+
+        $files = $request->file('pages') ?? $request->input('pages', []);
+        $insertAfter = $request->has('insert_after') && $request->input('insert_after') !== null ? (int) $request->input('insert_after') : null;
+
+        if (empty($files)) {
+            return response()->json(['success' => false, 'message' => 'Tidak ada gambar yang diunggah.'], 422);
+        }
+
+        $pages = $uploadBatch->execute($chapter, $files, $insertAfter);
+
+        return response()->json([
+            'success' => true,
+            'pages' => $pages,
+            'message' => 'Gambar halaman berhasil ditambahkan.',
+        ]);
+    }
+
+    public function deletePageRealtime(int $comicId, int $chapterId, int $pageId, Request $request, UploadChapterPagesBatch $uploadBatch): JsonResponse
+    {
+        $user = $request->user();
+        $comic = Comic::where('id', $comicId)->where('publisher_id', $user->id)->firstOrFail();
+        $chapter = Chapter::where('id', $chapterId)->where('comic_id', $comic->id)->firstOrFail();
+
+        $pages = $uploadBatch->deletePage($chapter, $pageId);
+
+        return response()->json([
+            'success' => true,
+            'pages' => $pages,
+            'message' => 'Halaman berhasil dihapus.',
+        ]);
+    }
+
+    public function reorderPagesRealtime(int $comicId, int $chapterId, Request $request, UploadChapterPagesBatch $uploadBatch): JsonResponse
+    {
+        $user = $request->user();
+        $comic = Comic::where('id', $comicId)->where('publisher_id', $user->id)->firstOrFail();
+        $chapter = Chapter::where('id', $chapterId)->where('comic_id', $comic->id)->firstOrFail();
+
+        $request->validate([
+            'page_ids' => ['required', 'array', 'min:1'],
+        ]);
+
+        $pages = $uploadBatch->reorderPages($chapter, $request->input('page_ids'));
+
+        return response()->json([
+            'success' => true,
+            'pages' => $pages,
+            'message' => 'Urutan halaman berhasil diperbarui.',
+        ]);
+    }
 }

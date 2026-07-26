@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('mime_type', 50)->nullable();
             $table->timestamps();
 
-            $table->unique(['chapter_id', 'page_number']);
+            $table->index(['chapter_id', 'page_number']);
         });
     }
 
