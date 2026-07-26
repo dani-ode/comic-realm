@@ -38,6 +38,7 @@ interface Comic {
   artist_name?: string;
   status: string;
   rating_average: number;
+  total_ratings?: number;
   total_views: number;
   total_bookmarks: number;
   genres?: Genre[];
