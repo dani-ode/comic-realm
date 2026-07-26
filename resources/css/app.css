@@ -15,7 +15,7 @@
   }
 }
 
-h1 {
+h1, .font-brand, .font-medieval {
   font-family: 'MedievalSharp', cursive, serif !important;
   letter-spacing: 0.02em;
 }

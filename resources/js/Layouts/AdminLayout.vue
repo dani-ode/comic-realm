@@ -106,7 +106,7 @@ const submitPasswordUpdate = () => {
             <SwatchIcon class="w-5 h-5" />
           </div>
           <div v-if="isSidebarOpen" class="flex flex-col truncate">
-            <span class="font-black text-white text-sm tracking-wider uppercase">ComicRealm</span>
+            <span class="font-brand font-black text-white text-base tracking-wider uppercase">ComicRealm</span>
             <span class="text-[10px] text-sky-400 font-bold uppercase tracking-widest">Creator Studio</span>
           </div>
         </Link>
