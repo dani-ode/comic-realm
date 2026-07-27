@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline';
 
 interface ChapterNav {
   chapter_number: number;
@@ -35,10 +36,14 @@ const changeChapter = (e: Event) => {
 
 <template>
   <header class="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 py-3 flex items-center justify-between transition-transform duration-300">
-    <!-- Back to Comic Detail -->
+    <!-- Exit Button (X Icon Only) + Comic Title -->
     <div class="flex items-center gap-3">
-      <Link :href="`/comics/${comic.slug}`" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition">
-        ← Back
+      <Link
+        :href="`/comics/${comic.slug}`"
+        title="Keluar / Exit Reader"
+        class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition flex items-center justify-center"
+      >
+        <XMarkIcon class="w-5 h-5" />
       </Link>
       <div class="hidden sm:block">
         <h1 class="text-sm font-bold text-white line-clamp-1">{{ comic.title }}</h1>
@@ -59,28 +64,38 @@ const changeChapter = (e: Event) => {
       </select>
     </div>
 
-    <!-- Prev & Next Buttons -->
+    <!-- Prev & Next Icon Buttons Only -->
     <div class="flex items-center gap-2">
       <Link
         v-if="prevChapter"
         :href="`/read/${comic.slug}/${prevChapter.chapter_number}`"
-        class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white hover:border-slate-700 transition"
+        title="Chapter Sebelumnya"
+        class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700 transition flex items-center justify-center"
       >
-        Prev
+        <ChevronLeftIcon class="w-5 h-5" />
       </Link>
-      <span v-else class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-900 text-xs font-semibold text-slate-700 cursor-not-allowed">
-        Prev
+      <span
+        v-else
+        title="Chapter Sebelumnya"
+        class="p-2 rounded-xl bg-slate-950 border border-slate-900 text-slate-700 cursor-not-allowed flex items-center justify-center"
+      >
+        <ChevronLeftIcon class="w-5 h-5" />
       </span>
 
       <Link
         v-if="nextChapter"
         :href="`/read/${comic.slug}/${nextChapter.chapter_number}`"
-        class="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white transition shadow-md shadow-sky-600/30"
+        title="Chapter Selanjutnya"
+        class="p-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white transition shadow-md shadow-sky-600/30 flex items-center justify-center"
       >
-        Next
+        <ChevronRightIcon class="w-5 h-5" />
       </Link>
-      <span v-else class="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-900 text-xs font-semibold text-slate-700 cursor-not-allowed">
-        Next
+      <span
+        v-else
+        title="Chapter Selanjutnya"
+        class="p-2 rounded-xl bg-slate-950 border border-slate-900 text-slate-700 cursor-not-allowed flex items-center justify-center"
+      >
+        <ChevronRightIcon class="w-5 h-5" />
       </span>
     </div>
   </header>

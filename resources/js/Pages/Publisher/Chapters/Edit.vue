@@ -292,7 +292,7 @@ const handleFileSelect = async (event: Event, insertAfterNum: number | null = nu
             ref="insertFileInput"
             type="file"
             multiple
-            accept="image/*"
+            accept="image/*,.txt,text/plain"
             class="hidden"
             @change="(e) => handleFileSelect(e, activeInsertAfter)"
           />
@@ -300,7 +300,7 @@ const handleFileSelect = async (event: Event, insertAfterNum: number | null = nu
             ref="appendFileInput"
             type="file"
             multiple
-            accept="image/*"
+            accept="image/*,.txt,text/plain"
             class="hidden"
             @change="(e) => handleFileSelect(e, null)"
           />
@@ -311,7 +311,7 @@ const handleFileSelect = async (event: Event, insertAfterNum: number | null = nu
             class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 transition shadow-md shadow-indigo-600/20 shrink-0"
           >
             <PlusIcon class="w-4 h-4" />
-            + Unggah Gambar di Akhir Bab
+            + Unggah Gambar / File .txt Link
           </button>
         </div>
 

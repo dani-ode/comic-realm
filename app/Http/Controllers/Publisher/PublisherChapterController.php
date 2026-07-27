@@ -54,7 +54,9 @@ class PublisherChapterController extends Controller
             'chapter_number' => ['required', 'numeric', 'min:0.1'],
             'is_free' => ['required', 'boolean'],
             'price' => ['required_if:is_free,false', 'numeric', 'min:0'],
-            'pages' => ['nullable', 'array'],
+            'pages' => ['nullable'],
+            'txt_file' => ['nullable', 'file'],
+            'url_list' => ['nullable', 'string'],
         ]);
 
         $comic = Comic::where('id', $comicId)
@@ -75,8 +77,13 @@ class PublisherChapterController extends Controller
             'published_at' => now(),
         ]);
 
-        if ($request->hasFile('pages')) {
-            $uploadBatch->execute($chapter, $request->file('pages'));
+        if ($request->hasFile('txt_file')) {
+            $uploadBatch->execute($chapter, $request->file('txt_file'));
+        } elseif ($request->filled('url_list')) {
+            $uploadBatch->execute($chapter, $request->input('url_list'));
+        } elseif ($request->hasFile('pages') || $request->has('pages')) {
+            $files = $request->file('pages') ?? $request->input('pages', []);
+            $uploadBatch->execute($chapter, $files);
         }
 
         return redirect()->route('publisher.comics.index')->with('success', "Bab {$chapterNumber} berhasil diterbitkan.");
@@ -176,11 +183,15 @@ class PublisherChapterController extends Controller
         $comic = Comic::where('id', $comicId)->where('publisher_id', $user->id)->firstOrFail();
         $chapter = Chapter::where('id', $chapterId)->where('comic_id', $comic->id)->firstOrFail();
 
-        $files = $request->file('pages') ?? $request->input('pages', []);
+        $files = $request->file('txt_file')
+            ?? $request->input('url_list')
+            ?? $request->file('pages')
+            ?? $request->input('pages', []);
+
         $insertAfter = $request->has('insert_after') && $request->input('insert_after') !== null ? (int) $request->input('insert_after') : null;
 
         if (empty($files)) {
-            return response()->json(['success' => false, 'message' => 'Tidak ada gambar yang diunggah.'], 422);
+            return response()->json(['success' => false, 'message' => 'Tidak ada gambar atau file link yang diunggah.'], 422);
         }
 
         $pages = $uploadBatch->execute($chapter, $files, $insertAfter);

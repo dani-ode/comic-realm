@@ -12,22 +12,62 @@ class UploadChapterPagesBatch
 {
     /**
      * Upload or insert new pages into a chapter.
+     * Supports image files, base64 strings, .txt files with URLs, and direct URL strings.
      */
-    public function execute(Chapter $chapter, array $files, ?int $insertAfterPage = null): array
+    public function execute(Chapter $chapter, array|string|UploadedFile $files, ?int $insertAfterPage = null): array
     {
         return DB::transaction(function () use ($chapter, $files, $insertAfterPage) {
             $chapter->load('comic');
             $comicSlug = $chapter->comic->slug;
             $chapterNumber = $chapter->chapter_number;
 
-            $fileCount = count($files);
+            // Normalize $files input into an array of items (UploadedFile, Base64, or URL string)
+            $items = [];
+            $rawList = is_array($files) ? $files : [$files];
+
+            foreach ($rawList as $item) {
+                if ($item instanceof UploadedFile) {
+                    $ext = strtolower($item->getClientOriginalExtension());
+                    $mime = strtolower($item->getClientMimeType());
+
+                    if ($ext === 'txt' || str_contains($mime, 'text/plain')) {
+                        $lines = file($item->getRealPath(), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                        foreach ($lines as $line) {
+                            $trimmed = trim($line);
+                            if (! empty($trimmed) && (str_starts_with($trimmed, 'http://') || str_starts_with($trimmed, 'https://'))) {
+                                $items[] = $trimmed;
+                            }
+                        }
+                    } else {
+                        $items[] = $item;
+                    }
+                } elseif (is_string($item)) {
+                    // Could be multi-line string or single string
+                    $lines = explode("\n", str_replace("\r", "", $item));
+                    foreach ($lines as $line) {
+                        $trimmed = trim($line);
+                        if (empty($trimmed)) {
+                            continue;
+                        }
+                        if (str_starts_with($trimmed, 'http://') || str_starts_with($trimmed, 'https://') || str_starts_with($trimmed, 'data:image')) {
+                            $items[] = $trimmed;
+                        }
+                    }
+                }
+            }
+
+            $totalItemsCount = count($items);
+
+            if ($totalItemsCount === 0) {
+                return $chapter->pages()->orderBy('page_number', 'asc')->get()->toArray();
+            }
 
             if ($insertAfterPage !== null && $insertAfterPage >= 0) {
-                // Shift existing pages after insertAfterPage by +fileCount
+                // Shift existing pages after insertAfterPage by +totalItemsCount
                 ChapterPage::where('chapter_id', $chapter->id)
                     ->where('page_number', '>', $insertAfterPage)
                     ->orderBy('page_number', 'desc')
-                    ->increment('page_number', $fileCount);
+                    ->increment('page_number', $totalItemsCount);
 
                 $startPageNumber = $insertAfterPage + 1;
             } else {
@@ -38,21 +78,21 @@ class UploadChapterPagesBatch
             $createdPages = [];
             $pageNumber = $startPageNumber;
 
-            foreach ($files as $file) {
-                if ($file instanceof UploadedFile) {
+            foreach ($items as $item) {
+                if ($item instanceof UploadedFile) {
                     $filename = sprintf('%03d_%s.webp', $pageNumber, uniqid());
                     $directory = "comics/{$comicSlug}/ch{$chapterNumber}";
-                    $path = $file->storeAs($directory, $filename, 'public');
+                    $path = $item->storeAs($directory, $filename, 'public');
 
-                    $dimensions = @getimagesize($file->getRealPath());
+                    $dimensions = @getimagesize($item->getRealPath());
                     $width = $dimensions ? $dimensions[0] : 800;
                     $height = $dimensions ? $dimensions[1] : 1200;
-                    $fileSize = $file->getSize();
-                    $mimeType = $file->getClientMimeType();
+                    $fileSize = $item->getSize();
+                    $mimeType = $item->getClientMimeType();
                     $imageUrl = Storage::url($path);
-                } else if (is_string($file) && str_starts_with($file, 'data:image')) {
+                } elseif (is_string($item) && str_starts_with($item, 'data:image')) {
                     // Handle Base64 Upload
-                    preg_match('/data:image\/(.*?);base64,(.*)/', $file, $matches);
+                    preg_match('/data:image\/(.*?);base64,(.*)/', $item, $matches);
                     $extension = $matches[1] ?? 'webp';
                     $data = base64_decode($matches[2] ?? '');
 
@@ -67,6 +107,14 @@ class UploadChapterPagesBatch
                     $height = 1200;
                     $fileSize = strlen($data);
                     $mimeType = "image/{$extension}";
+                } elseif (is_string($item) && (str_starts_with($item, 'http://') || str_starts_with($item, 'https://'))) {
+                    // Handle External URL
+                    $path = 'external';
+                    $imageUrl = $item;
+                    $width = 800;
+                    $height = 1200;
+                    $fileSize = null;
+                    $mimeType = 'image/webp';
                 } else {
                     continue;
                 }

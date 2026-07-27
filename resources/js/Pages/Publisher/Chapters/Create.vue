@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
-import { BookmarkIcon, SparklesIcon, InformationCircleIcon } from '@heroicons/vue/24/outline';
+import { InformationCircleIcon, DocumentTextIcon, PhotoIcon, LinkIcon } from '@heroicons/vue/24/outline';
 
 interface Comic {
   id: number;
@@ -23,12 +24,17 @@ const nextChapterNumber = props.latestChapter
   ? Number((props.latestChapter.chapter_number + 1).toFixed(1))
   : 1.0;
 
+const uploadMode = ref<'txt' | 'urls' | 'files'>('txt');
+const txtLineCount = ref(0);
+
 const form = useForm({
   title: '',
   chapter_number: nextChapterNumber,
   is_free: true,
   price: 0,
   pages: [] as File[],
+  txt_file: null as File | null,
+  url_list: '',
 });
 
 const handleFileChange = (e: Event) => {
@@ -38,7 +44,40 @@ const handleFileChange = (e: Event) => {
   }
 };
 
+const handleTxtFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  if (target.files && target.files[0]) {
+    const file = target.files[0];
+    form.txt_file = file;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const content = (evt.target?.result as string) || '';
+      const lines = content
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.startsWith('http://') || l.startsWith('https://'));
+      txtLineCount.value = lines.length;
+    };
+    reader.readAsText(file);
+  } else {
+    form.txt_file = null;
+    txtLineCount.value = 0;
+  }
+};
+
+const parsedUrlCount = computed(() => {
+  if (!form.url_list) return 0;
+  return form.url_list
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith('http://') || l.startsWith('https://')).length;
+});
+
 const submit = () => {
+  if (uploadMode.value !== 'files') form.pages = [];
+  if (uploadMode.value !== 'txt') form.txt_file = null;
+  if (uploadMode.value !== 'urls') form.url_list = '';
+
   form.post(`/publisher/comics/${props.comic.id}/chapters`);
 };
 </script>
@@ -125,21 +164,89 @@ const submit = () => {
             </div>
           </div>
 
-          <!-- WebP Image Batch Upload -->
-          <div>
-            <label class="block text-sm font-medium text-slate-300 mb-1">
-              Upload WebP Chapter Pages (Batch Upload)
+          <!-- Input Mode Selector (TXT Link vs Direct URLs vs Image Files) -->
+          <div class="space-y-3">
+            <label class="block text-sm font-bold text-slate-200">
+              Metode Unggah Halaman Komik
             </label>
-            <input
-              type="file"
-              multiple
-              accept="image/webp,image/png,image/jpeg"
-              @change="handleFileChange"
-              class="block w-full text-xs text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 bg-slate-950 border border-slate-800 rounded-xl p-2"
-            />
-            <p class="text-xs text-slate-500 mt-1">
-              Selected {{ form.pages.length }} images. Files will be ordered by filename and displayed in continuous vertical reader.
-            </p>
+            <div class="grid grid-cols-3 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800 text-xs font-bold">
+              <button
+                type="button"
+                @click="uploadMode = 'txt'"
+                :class="uploadMode === 'txt' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'"
+                class="py-2.5 rounded-lg transition flex items-center justify-center gap-1.5"
+              >
+                <DocumentTextIcon class="w-4 h-4" /> File .txt Link
+              </button>
+              <button
+                type="button"
+                @click="uploadMode = 'urls'"
+                :class="uploadMode === 'urls' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'"
+                class="py-2.5 rounded-lg transition flex items-center justify-center gap-1.5"
+              >
+                <LinkIcon class="w-4 h-4" /> Tempel URL
+              </button>
+              <button
+                type="button"
+                @click="uploadMode = 'files'"
+                :class="uploadMode === 'files' ? 'bg-sky-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'"
+                class="py-2.5 rounded-lg transition flex items-center justify-center gap-1.5"
+              >
+                <PhotoIcon class="w-4 h-4" /> Gambar WebP/PNG
+              </button>
+            </div>
+
+            <!-- Mode 1: Upload File .txt -->
+            <div v-if="uploadMode === 'txt'" class="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+              <label class="block text-xs font-bold text-slate-300">
+                Upload File `.txt` (Berisi Link Gambar CDN/Server Lain)
+              </label>
+              <input
+                type="file"
+                accept=".txt,text/plain"
+                @change="handleTxtFileChange"
+                class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 bg-slate-900 border border-slate-800 rounded-xl p-2"
+              />
+              <p v-if="txtLineCount > 0" class="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                ✓ Terdeteksi {{ txtLineCount }} link URL gambar siap di-import.
+              </p>
+              <p class="text-[11px] text-slate-500">
+                Format file: 1 link URL per baris (contoh: <code>https://cdn.example.com/ch1/001.webp</code>).
+              </p>
+            </div>
+
+            <!-- Mode 2: Tempel URL Textarea -->
+            <div v-else-if="uploadMode === 'urls'" class="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+              <label class="block text-xs font-bold text-slate-300">
+                Tempelkan Daftar Link URL Gambar (1 Link Per Baris)
+              </label>
+              <textarea
+                v-model="form.url_list"
+                rows="6"
+                placeholder="https://cdn.example.com/ch1/001.webp&#10;https://cdn.example.com/ch1/002.webp&#10;https://cdn.example.com/ch1/003.webp"
+                class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-sky-500"
+              ></textarea>
+              <p v-if="parsedUrlCount > 0" class="text-xs font-bold text-emerald-400">
+                ✓ Terdeteksi {{ parsedUrlCount }} link URL valid.
+              </p>
+            </div>
+
+            <!-- Mode 3: Upload Image Files -->
+            <div v-else class="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+              <label class="block text-xs font-bold text-slate-300">
+                Upload File Gambar (WebP/PNG/JPG)
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/webp,image/png,image/jpeg"
+                @change="handleFileChange"
+                class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 bg-slate-900 border border-slate-800 rounded-xl p-2"
+              />
+              <p class="text-xs text-slate-500">
+                Memilih {{ form.pages.length }} file gambar.
+              </p>
+            </div>
           </div>
 
           <button
@@ -147,7 +254,7 @@ const submit = () => {
             :disabled="form.processing"
             class="w-full flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-sky-600 hover:bg-sky-500 transition shadow-lg shadow-sky-600/30"
           >
-            {{ form.processing ? 'Publishing Chapter & Uploading Pages...' : 'Publish Chapter →' }}
+            {{ form.processing ? 'Publishing Chapter & Saving Pages...' : 'Publish Chapter →' }}
           </button>
         </form>
       </div>

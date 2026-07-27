@@ -38,6 +38,70 @@ it('allows regular user to apply for publisher role and redirects if already app
     $responseApplyAgain->assertRedirect(route('publisher.dashboard'));
 });
 
+it('allows approved publisher to publish chapter via txt file upload or url list', function () {
+    $publisher = User::factory()->create();
+    PublisherProfile::create([
+        'user_id' => $publisher->id,
+        'brand_name' => 'Link Master Studio',
+        'slug' => 'link-master-studio',
+        'verification_status' => 'approved',
+    ]);
+
+    $comic = Comic::factory()->create(['publisher_id' => $publisher->id]);
+
+    // Test 1: Upload via .txt file
+    $txtContent = "https://cdn.example.com/ch001/001.webp\nhttps://cdn.example.com/ch001/002.webp\nhttps://cdn.example.com/ch001/003.webp";
+    $txtFile = UploadedFile::fake()->createWithContent('chapter1.txt', $txtContent);
+
+    $response = $this->actingAs($publisher)->post("/publisher/comics/{$comic->id}/chapters", [
+        'title' => 'Chapter 1: External Links',
+        'chapter_number' => 1.0,
+        'is_free' => true,
+        'price' => 0,
+        'txt_file' => $txtFile,
+    ]);
+
+    $response->assertRedirect(route('publisher.comics.index'));
+
+    $this->assertDatabaseHas('chapters', [
+        'comic_id' => $comic->id,
+        'chapter_number' => 1.0,
+    ]);
+
+    $this->assertDatabaseHas('chapter_pages', [
+        'page_number' => 1,
+        'image_url' => 'https://cdn.example.com/ch001/001.webp',
+        'image_path' => 'external',
+    ]);
+
+    $this->assertDatabaseHas('chapter_pages', [
+        'page_number' => 3,
+        'image_url' => 'https://cdn.example.com/ch001/003.webp',
+    ]);
+
+    // Test 2: Upload via url_list textarea
+    $urlList = "https://cdn.example.com/ch002/001.webp\nhttps://cdn.example.com/ch002/002.webp";
+    $response2 = $this->actingAs($publisher)->post("/publisher/comics/{$comic->id}/chapters", [
+        'title' => 'Chapter 2: Textarea Links',
+        'chapter_number' => 2.0,
+        'is_free' => true,
+        'price' => 0,
+        'url_list' => $urlList,
+    ]);
+
+    $response2->assertRedirect(route('publisher.comics.index'));
+
+    $this->assertDatabaseHas('chapters', [
+        'comic_id' => $comic->id,
+        'chapter_number' => 2.0,
+    ]);
+
+    $this->assertDatabaseHas('chapter_pages', [
+        'page_number' => 1,
+        'image_url' => 'https://cdn.example.com/ch002/001.webp',
+    ]);
+});
+
 test('it decodes base64 cover image and saves stored file path when creating comic', function () {
     Storage::fake('public');
 
