@@ -91,6 +91,11 @@ const handleCoverFileSelect = (event: Event) => {
       form.cover_image = croppedUrl;
       coverPreview.value = croppedUrl;
     };
+    img.onerror = () => {
+      const rawUrl = (e.target?.result as string) || '';
+      form.cover_image = rawUrl;
+      coverPreview.value = rawUrl;
+    };
     img.src = e.target?.result as string;
   };
   reader.readAsDataURL(file);
@@ -136,6 +141,11 @@ const handleBannerFileSelect = (event: Event) => {
       const croppedUrl = canvas.toDataURL('image/webp', 0.90);
       form.banner_image = croppedUrl;
       bannerPreview.value = croppedUrl;
+    };
+    img.onerror = () => {
+      const rawUrl = (e.target?.result as string) || '';
+      form.banner_image = rawUrl;
+      bannerPreview.value = rawUrl;
     };
     img.src = e.target?.result as string;
   };
@@ -230,7 +240,7 @@ const submit = () => {
                 <label class="block text-xs font-bold text-slate-300">Ubah File Cover Komik</label>
                 <input
                   type="file"
-                  accept="image/png,image/jpeg,image/webp"
+                  accept="image/png,image/jpeg,image/webp,image/avif,image/*"
                   @change="handleCoverFileSelect"
                   class="block w-full text-xs text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 bg-slate-900 border border-slate-800 rounded-xl p-2 cursor-pointer"
                 />
@@ -274,7 +284,7 @@ const submit = () => {
                 <label class="block text-xs font-bold text-slate-300 mb-1">Ubah File Banner Header Komik</label>
                 <input
                   type="file"
-                  accept="image/png,image/jpeg,image/webp"
+                  accept="image/png,image/jpeg,image/webp,image/avif,image/*"
                   @change="handleBannerFileSelect"
                   class="block w-full text-xs text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 bg-slate-900 border border-slate-800 rounded-xl p-2 cursor-pointer"
                 />
