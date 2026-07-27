@@ -122,9 +122,12 @@ class PaymentTransactionController extends Controller
                         );
                     }
                 }
+
+                // Otomatis kredit royalti 70% ke dompet publisher
+                app(\App\Domain\Wallet\Actions\CreditPublisherRoyalty::class)->execute($payment->order);
             }
 
-            Log::info("checkStatus: Order {$payment->merchant_ref} successfully verified as PAID. Entitlement granted.");
+            Log::info("checkStatus: Order {$payment->merchant_ref} successfully verified as PAID. Entitlement granted & Royalty credited.");
 
             return response()->json([
                 'success' => true,
@@ -152,4 +155,5 @@ class PaymentTransactionController extends Controller
             'message' => "Status transaksi saat ini: {$triPayStatus}",
         ]);
     }
+    
 }

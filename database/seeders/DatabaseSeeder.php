@@ -33,8 +33,8 @@ class DatabaseSeeder extends Seeder
         $reader = User::firstOrCreate(
             ['email' => 'reader@comicrealm.test'],
             [
-                'name'     => 'Budi Santoso',
-                'username' => 'budisantoso',
+                'name'     => 'Puput',
+                'username' => 'puput',
                 'password' => Hash::make('password123'),
                 'role'     => 'user',
                 'status'   => 'active',

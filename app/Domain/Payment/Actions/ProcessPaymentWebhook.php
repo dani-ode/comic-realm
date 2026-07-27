@@ -7,6 +7,7 @@ use App\Domain\Order\Models\Order;
 use App\Domain\Payment\Contracts\PaymentGateway;
 use App\Domain\Payment\Enums\PaymentStatus;
 use App\Domain\Payment\Models\Payment;
+use App\Domain\Wallet\Actions\CreditPublisherRoyalty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -51,108 +52,119 @@ class ProcessPaymentWebhook
         }
 
         return DB::transaction(function () use ($merchantRef, $status, $verification) {
-            $payment = Payment::where('merchant_ref', $merchantRef)
-                ->orWhere('tripay_reference', $verification['reference'] ?? '')
-                ->first();
+            return $this->processTransaction($merchantRef, $status, $verification);
+        });
+    }
 
-            if (! $payment) {
-                Log::error('TriPay Webhook payment record not found', ['merchant_ref' => $merchantRef]);
-                return ['success' => false, 'message' => 'Payment transaction record not found.'];
-            }
+    private function processTransaction(string $merchantRef, string $status, array $verification): array
+    {
+        $payment = Payment::where('merchant_ref', $merchantRef)
+            ->orWhere('tripay_reference', $verification['reference'] ?? '')
+            ->first();
 
-            $order = Order::with('items')->find($payment->order_id);
+        if (! $payment) {
+            Log::error('TriPay Webhook payment record not found', ['merchant_ref' => $merchantRef]);
+            return ['success' => false, 'message' => 'Payment transaction record not found.'];
+        }
 
-            if ($status === 'PAID') {
-                $isOrderCancelled = $order && in_array(strtolower($order->status instanceof OrderStatus ? $order->status->value : (string)$order->status), ['cancelled', 'expired']);
-                $isPaymentCancelled = $payment->status === PaymentStatus::CANCELLED || $payment->status === PaymentStatus::EXPIRED;
+        $order = Order::with('items')->find($payment->order_id);
+        $orderStatusStr = $order
+            ? ($order->status instanceof OrderStatus ? $order->status->value : (string) $order->status)
+            : '';
 
-                if ($isOrderCancelled || $isPaymentCancelled) {
-                    $payment->update([
-                        'status' => PaymentStatus::REFUND,
-                        'paid_at' => now(),
-                    ]);
+        if ($status === 'PAID') {
+            $isOrderCancelled = $order && in_array(strtolower($orderStatusStr), ['cancelled', 'expired'], true);
+            $isPaymentCancelled = $payment->status === PaymentStatus::CANCELLED || $payment->status === PaymentStatus::EXPIRED;
 
-                    Log::warning("TriPay Webhook: PAID received for CANCELLED order {$merchantRef}. Flagged as REFUND (Manual refund required).", [
-                        'merchant_ref' => $merchantRef,
-                        'amount' => $payment->amount,
-                    ]);
-
-                    return [
-                        'success' => true,
-                        'message' => 'Order was cancelled. Payment flagged for REFUND.',
-                    ];
-                }
-
+            if ($isOrderCancelled || $isPaymentCancelled) {
                 $payment->update([
-                    'status' => PaymentStatus::PAID,
+                    'status' => PaymentStatus::REFUND,
                     'paid_at' => now(),
                 ]);
 
-                if ($order && strtolower($order->status instanceof OrderStatus ? $order->status->value : (string)$order->status) !== 'completed') {
-                    $order->update([
-                        'status' => OrderStatus::COMPLETED->value,
-                        'completed_at' => now(),
-                    ]);
+                Log::warning("TriPay Webhook: PAID received for CANCELLED order {$merchantRef}. Flagged as REFUND (Manual refund required).", [
+                    'merchant_ref' => $merchantRef,
+                    'amount' => $payment->amount,
+                ]);
 
-                    // Otomatis berikan Hak Baca (Entitlement) untuk setiap bab dalam pesanan
-                    if (Schema::hasTable('entitlements')) {
-                        foreach ($order->items as $item) {
-                            DB::table('entitlements')->updateOrInsert(
-                                [
-                                    'user_id' => $order->user_id,
-                                    'chapter_id' => $item->chapter_id,
-                                ],
-                                [
-                                    'comic_id' => $item->comic_id,
-                                    'order_id' => $order->id,
-                                    'granted_at' => now(),
-                                    'created_at' => now(),
-                                    'updated_at' => now(),
-                                ]
-                            );
-                        }
+                return [
+                    'success' => true,
+                    'message' => 'Order was cancelled. Payment flagged for REFUND.',
+                ];
+            }
+
+            $payment->update([
+                'status' => PaymentStatus::PAID,
+                'paid_at' => now(),
+            ]);
+
+            if ($order && strtolower($orderStatusStr) !== 'completed') {
+                $order->update([
+                    'status' => OrderStatus::COMPLETED->value,
+                    'completed_at' => now(),
+                ]);
+
+                // Otomatis berikan Hak Baca (Entitlement) untuk setiap bab dalam pesanan
+                if (Schema::hasTable('entitlements')) {
+                    foreach ($order->items as $item) {
+                        DB::table('entitlements')->updateOrInsert(
+                            [
+                                'user_id' => $order->user_id,
+                                'chapter_id' => $item->chapter_id,
+                            ],
+                            [
+                                'comic_id' => $item->comic_id,
+                                'order_id' => $order->id,
+                                'granted_at' => now(),
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]
+                        );
                     }
                 }
 
-                Log::info("TriPay Webhook: Order {$merchantRef} successfully marked as PAID & Entitlement granted.");
-                return ['success' => true, 'message' => 'Payment successfully completed.'];
+                // Otomatis kredit royalti 70% ke dompet publisher
+                app(CreditPublisherRoyalty::class)->execute($order);
             }
 
-            if ($status === 'EXPIRED') {
-                $payment->update(['status' => PaymentStatus::EXPIRED]);
-                if ($order) {
-                    $order->update(['status' => OrderStatus::EXPIRED->value]);
-                }
-                Log::info("TriPay Webhook: Order {$merchantRef} marked as EXPIRED.");
-                return ['success' => true, 'message' => 'Payment status updated to EXPIRED.'];
-            }
+            Log::info("TriPay Webhook: Order {$merchantRef} successfully marked as PAID, entitlement granted, & royalty credited.");
+            return ['success' => true, 'message' => 'Payment successfully completed.'];
+        }
 
-            if ($status === 'FAILED') {
-                $payment->update(['status' => PaymentStatus::FAILED]);
-                if ($order) {
-                    $order->update(['status' => OrderStatus::FAILED->value]);
-                }
-                Log::info("TriPay Webhook: Order {$merchantRef} marked as FAILED.");
-                return ['success' => true, 'message' => 'Payment status updated to FAILED.'];
+        if ($status === 'EXPIRED') {
+            $payment->update(['status' => PaymentStatus::EXPIRED]);
+            if ($order) {
+                $order->update(['status' => OrderStatus::EXPIRED->value]);
             }
+            Log::info("TriPay Webhook: Order {$merchantRef} marked as EXPIRED.");
+            return ['success' => true, 'message' => 'Payment status updated to EXPIRED.'];
+        }
 
-            if ($status === 'REFUND') {
-                $payment->update(['status' => PaymentStatus::REFUND]);
-                if ($order) {
-                    $order->update(['status' => OrderStatus::CANCELLED->value]);
-                }
-                Log::info("TriPay Webhook: Order {$merchantRef} marked as REFUND.");
-                return ['success' => true, 'message' => 'Payment status updated to REFUND.'];
+        if ($status === 'FAILED') {
+            $payment->update(['status' => PaymentStatus::FAILED]);
+            if ($order) {
+                $order->update(['status' => OrderStatus::FAILED->value]);
             }
+            Log::info("TriPay Webhook: Order {$merchantRef} marked as FAILED.");
+            return ['success' => true, 'message' => 'Payment status updated to FAILED.'];
+        }
 
-            if ($status === 'UNPAID') {
-                $payment->update(['status' => PaymentStatus::UNPAID]);
-                Log::info("TriPay Webhook: Order {$merchantRef} status is UNPAID.");
-                return ['success' => true, 'message' => 'Payment status is UNPAID.'];
+        if ($status === 'REFUND') {
+            $payment->update(['status' => PaymentStatus::REFUND]);
+            if ($order) {
+                $order->update(['status' => OrderStatus::CANCELLED->value]);
             }
+            Log::info("TriPay Webhook: Order {$merchantRef} marked as REFUND.");
+            return ['success' => true, 'message' => 'Payment status updated to REFUND.'];
+        }
 
-            Log::info("TriPay Webhook: Unhandled status {$status} for order {$merchantRef}.");
-            return ['success' => true, 'message' => 'Payment status processed: ' . $status];
-        });
+        if ($status === 'UNPAID') {
+            $payment->update(['status' => PaymentStatus::UNPAID]);
+            Log::info("TriPay Webhook: Order {$merchantRef} status is UNPAID.");
+            return ['success' => true, 'message' => 'Payment status is UNPAID.'];
+        }
+
+        Log::info("TriPay Webhook: Unhandled status {$status} for order {$merchantRef}.");
+        return ['success' => true, 'message' => 'Payment status processed: ' . $status];
     }
 }

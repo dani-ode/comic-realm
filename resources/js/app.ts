@@ -4,7 +4,12 @@ import { createApp, h, DefineComponent } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 
+import { initGlobalLoadingListeners } from '@/composables/useLoading';
+
 const appName = import.meta.env.VITE_APP_NAME || 'The ComicRealm';
+
+// Inisialisasi router listeners untuk Top Progress Bar & Fullpage Popup Loader
+initGlobalLoadingListeners();
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -14,7 +19,6 @@ createInertiaApp({
             .use(plugin)
             .mount(el);
     },
-    progress: {
-        color: '#0284c7',
-    },
+    progress: false,
 });
+

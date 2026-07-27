@@ -34,6 +34,14 @@ class CreditPublisherRoyalty
                     ['balance' => 0, 'total_earned' => 0, 'total_withdrawn' => 0]
                 );
 
+                // Cek idempotensi: Cek apakah royalti untuk pesanan ini sudah pernah dikreditkan
+                $existingTx = WalletTransaction::where('wallet_id', $wallet->id)
+                    ->where('order_id', $order->id)
+                    ->first();
+                if ($existingTx) {
+                    continue;
+                }
+
                 $royaltyAmount = (int) round($item->price * $royaltyPercentage);
                 $newBalance = $wallet->balance + $royaltyAmount;
 

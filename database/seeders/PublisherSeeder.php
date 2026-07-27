@@ -29,8 +29,8 @@ class PublisherSeeder extends Seeder
             [
                 'user' => [
                     'email'    => 'publisher@comicrealm.test',
-                    'name'     => 'Dani Pratama',
-                    'username' => 'danipratama',
+                    'name'     => 'Dani M.',
+                    'username' => 'dani',
                     'role'     => 'publisher',
                     'status'   => 'active',
                 ],
@@ -40,14 +40,14 @@ class PublisherSeeder extends Seeder
                     'bio'                 => 'Studio komik indie yang berfokus pada genre action dan fantasy. Berkarya sejak 2022.',
                     'bank_name'           => 'BCA',
                     'bank_account_number' => '1234567890',
-                    'bank_account_name'   => 'Dani Pratama',
+                    'bank_account_name'   => 'Dani M',
                     'verification_status' => 'approved',
                     'approved_at'         => now()->subMonths(8),
                 ],
-                // balance = total_earned - total_withdrawn (harus konsisten)
+                // balance = total_earned - total_withdrawn (dihitung riil dari penjualan bab komik)
                 'wallet' => [
-                    'balance'         => 12_500_000,
-                    'total_earned'    => 12_500_000,
+                    'balance'         => 0,
+                    'total_earned'    => 0,
                     'total_withdrawn' => 0,
                 ],
             ],

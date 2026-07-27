@@ -2,105 +2,250 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Comic\Models\Chapter;
+use App\Domain\Comic\Models\Comic;
+use App\Domain\Order\Models\Order;
+use App\Domain\Order\Models\OrderItem;
 use App\Domain\Publisher\Models\PublisherProfile;
+use App\Domain\User\Models\User;
 use App\Domain\Wallet\Models\PublisherWallet;
 use App\Domain\Wallet\Models\WalletTransaction;
 use App\Domain\Wallet\Models\WithdrawalRequest;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PayoutSeeder extends Seeder
 {
     /**
-     * PayoutSeeder membuat riwayat withdrawal/payout dana dan wallet transactions.
-     * Aturan Bisnis Disbursement Transfer Manual:
-     * - Ketika publisher mengajukan WD, status = 'pending'. Saldo dompet belum dipotong.
-     * - Ketika Admin mentransfer manual & meng-approve WD, saldo dipotong,
-     *   total_withdrawn bertambah, dan transaksi mutasi debit dicatat.
+     * PayoutSeeder membuat riwayat transaksi pembelian bab komik dan withdrawal/payout.
+     * Mengatur data yang 100% konsisten antara Order, OrderItem, Entitlement, Wallet, dan WithdrawalRequest.
      */
     public function run(): void
     {
-        // 1. Dani Comic Studio (Dani Pratama - Approved & Produktif)
-        $daniProfile = PublisherProfile::where('brand_name', 'Dani Comic Studio')->first();
-        if ($daniProfile) {
-            $wallet = PublisherWallet::where('publisher_id', $daniProfile->id)->first();
-            if ($wallet) {
-                // Initial credit transaction (Akumulasi pendapatan royalti)
-                WalletTransaction::firstOrCreate(
-                    [
-                        'wallet_id' => $wallet->id,
-                        'reference_number' => 'EARN-DANI-001',
-                    ],
-                    [
-                        'type' => 'credit',
-                        'amount' => 12_500_000,
-                        'balance_after' => 12_500_000,
-                        'description' => 'Akumulasi pendapatan penjualan bab komik (Q1 & Q2)',
-                        'created_at' => now()->subMonths(6),
-                    ]
-                );
-
-                // WD 1 (Pengajuan Penarikan Payout Baru oleh Dani - STATUS PENDING)
-                // Saldo BELUM dipotong (tetap Rp 12.500.000) sampai Admin menekan tombol Approve!
-                WithdrawalRequest::firstOrCreate(
-                    [
-                        'wallet_id' => $wallet->id,
-                        'bank_account_number' => '1234567890',
-                        'amount' => 4_500_000,
-                        'status' => 'pending',
-                    ],
-                    [
-                        'publisher_id' => $daniProfile->id,
-                        'bank_name' => $daniProfile->bank_name ?: 'BCA',
-                        'bank_account_name' => $daniProfile->bank_account_name ?: 'Dani Pratama',
-                        'status' => 'pending',
-                        'created_at' => now()->subHours(5),
-                    ]
-                );
-
-                // Initial Wallet State before approval:
-                // total_earned: 12,500,000
-                // total_withdrawn: 0
-                // balance: 12,500,000 (akan berkurang menjadi 8,000,000 setelah disetujui Admin)
-                $wallet->update([
-                    'total_earned' => 12_500_000,
-                    'total_withdrawn' => 0,
-                    'balance' => 12_500_000,
-                ]);
-            }
+        $readers = User::where('role', 'user')->get();
+        if ($readers->isEmpty()) {
+            return;
         }
 
-        // 2. Realm Art Studio (Ari Setiawan)
-        $realmProfile = PublisherProfile::where('brand_name', 'Realm Art Studio')->first();
-        if ($realmProfile) {
-            $wallet = PublisherWallet::where('publisher_id', $realmProfile->id)->first();
-            if ($wallet) {
-                WalletTransaction::firstOrCreate(
+        // ─────────────────────────────────────────────────────────────────────────
+        // 1. Dani Comic Studio (Dani M. - publisher@comicrealm.test)
+        // ─────────────────────────────────────────────────────────────────────────
+        $daniProfile = PublisherProfile::where('brand_name', 'Dani Comic Studio')->first();
+        if ($daniProfile) {
+            $wallet = PublisherWallet::firstOrCreate(
+                ['publisher_id' => $daniProfile->id],
+                ['balance' => 0, 'total_earned' => 0, 'total_withdrawn' => 0]
+            );
+
+            $daniComics = Comic::where('publisher_id', $daniProfile->user_id)->get();
+            $totalRoyaltyEarned = 0;
+            $orderCounter = 100;
+
+            // Generate ~20 transaksi pembelian realistis untuk bab-bab berbayar milik Dani Studio
+            foreach ($daniComics as $comic) {
+                $paidChapters = Chapter::where('comic_id', $comic->id)->where('is_free', false)->get();
+                
+                foreach ($paidChapters as $ch) {
+                    foreach ($readers as $rIdx => $reader) {
+                        // Tidak semua reader beli semua chapter (pola kombinasi)
+                        if (($comic->id + $ch->id + $reader->id) % 3 === 0) {
+                            $orderCounter++;
+                            $invNum = sprintf('INV-202607%02d-DANI%03d', rand(10, 26), $orderCounter);
+                            $createdDate = now()->subDays(rand(1, 20))->subHours(rand(1, 12));
+
+                            $order = Order::firstOrCreate(
+                                ['order_number' => $invNum],
+                                [
+                                    'user_id' => $reader->id,
+                                    'subtotal' => $ch->price,
+                                    'tax_amount' => 0,
+                                    'fee_amount' => 0,
+                                    'total_amount' => $ch->price,
+                                    'status' => 'completed',
+                                    'completed_at' => $createdDate,
+                                    'created_at' => $createdDate,
+                                ]
+                            );
+
+                            OrderItem::firstOrCreate(
+                                ['order_id' => $order->id, 'chapter_id' => $ch->id],
+                                [
+                                    'comic_id' => $comic->id,
+                                    'title_snapshot' => $comic->title . ' - Bab ' . $ch->chapter_number,
+                                    'chapter_number_snapshot' => $ch->chapter_number,
+                                    'price' => $ch->price,
+                                    'created_at' => $createdDate,
+                                ]
+                            );
+
+                            // Grant Entitlement
+                            if (Schema::hasTable('entitlements')) {
+                                DB::table('entitlements')->updateOrInsert(
+                                    ['user_id' => $reader->id, 'chapter_id' => $ch->id],
+                                    [
+                                        'comic_id' => $comic->id,
+                                        'order_id' => $order->id,
+                                        'granted_at' => $createdDate,
+                                        'created_at' => $createdDate,
+                                        'updated_at' => $createdDate,
+                                    ]
+                                );
+                            }
+
+                            // Royalti 70%
+                            $royalty = (int) round($ch->price * 0.70);
+                            $totalRoyaltyEarned += $royalty;
+
+                            WalletTransaction::firstOrCreate(
+                                ['reference_number' => $invNum, 'wallet_id' => $wallet->id],
+                                [
+                                    'order_id' => $order->id,
+                                    'type' => 'credit',
+                                    'amount' => $royalty,
+                                    'balance_after' => $totalRoyaltyEarned,
+                                    'description' => "Royalty 70% share for {$comic->title} - Bab {$ch->chapter_number}",
+                                    'created_at' => $createdDate,
+                                ]
+                            );
+                        }
+                    }
+                }
+            }
+
+            // Tambahkan 1 transaksi pending untuk variasi
+            $firstPaidCh = Chapter::whereHas('comic', fn ($q) => $q->where('publisher_id', $daniProfile->user_id))
+                ->where('is_free', false)
+                ->first();
+
+            if ($firstPaidCh) {
+                $pendingOrder = Order::firstOrCreate(
+                    ['order_number' => 'INV-20260727-PEND01'],
                     [
-                        'wallet_id' => $wallet->id,
-                        'reference_number' => 'EARN-REALM-001',
-                    ],
-                    [
-                        'type' => 'credit',
-                        'amount' => 3_500_000,
-                        'balance_after' => 3_500_000,
-                        'description' => 'Akumulasi pendapatan penjualan bab komik',
-                        'created_at' => now()->subMonths(4),
+                        'user_id' => $readers->first()->id,
+                        'subtotal' => $firstPaidCh->price,
+                        'tax_amount' => 0,
+                        'fee_amount' => 0,
+                        'total_amount' => $firstPaidCh->price,
+                        'status' => 'pending',
+                        'created_at' => now()->subHours(2),
                     ]
                 );
 
+                OrderItem::firstOrCreate(
+                    ['order_id' => $pendingOrder->id, 'chapter_id' => $firstPaidCh->id],
+                    [
+                        'comic_id' => $firstPaidCh->comic_id,
+                        'title_snapshot' => $firstPaidCh->comic->title . ' - Bab ' . $firstPaidCh->chapter_number,
+                        'chapter_number_snapshot' => $firstPaidCh->chapter_number,
+                        'price' => $firstPaidCh->price,
+                        'created_at' => now()->subHours(2),
+                    ]
+                );
+            }
+
+            $wallet->update([
+                'total_earned' => $totalRoyaltyEarned,
+                'total_withdrawn' => 0,
+                'balance' => $totalRoyaltyEarned,
+            ]);
+        }
+
+        // ─────────────────────────────────────────────────────────────────────────
+        // 2. Realm Art Studio (Ari Setiawan - realm@comicrealm.test)
+        // ─────────────────────────────────────────────────────────────────────────
+        $realmProfile = PublisherProfile::where('brand_name', 'Realm Art Studio')->first();
+        if ($realmProfile) {
+            $wallet = PublisherWallet::firstOrCreate(
+                ['publisher_id' => $realmProfile->id],
+                ['balance' => 0, 'total_earned' => 0, 'total_withdrawn' => 0]
+            );
+
+            $realmComics = Comic::where('publisher_id', $realmProfile->user_id)->get();
+            $totalRoyaltyEarned = 0;
+            $orderCounter = 200;
+
+            foreach ($realmComics as $comic) {
+                $paidChapters = Chapter::where('comic_id', $comic->id)->where('is_free', false)->get();
+
+                foreach ($paidChapters as $ch) {
+                    foreach ($readers as $reader) {
+                        $orderCounter++;
+                        $invNum = sprintf('INV-202607%02d-REALM%03d', rand(1, 15), $orderCounter);
+                        $createdDate = now()->subDays(rand(10, 40))->subHours(rand(1, 12));
+
+                        $order = Order::firstOrCreate(
+                            ['order_number' => $invNum],
+                            [
+                                'user_id' => $reader->id,
+                                'subtotal' => $ch->price,
+                                'tax_amount' => 0,
+                                'fee_amount' => 0,
+                                'total_amount' => $ch->price,
+                                'status' => 'completed',
+                                'completed_at' => $createdDate,
+                                'created_at' => $createdDate,
+                            ]
+                        );
+
+                        OrderItem::firstOrCreate(
+                            ['order_id' => $order->id, 'chapter_id' => $ch->id],
+                            [
+                                'comic_id' => $comic->id,
+                                'title_snapshot' => $comic->title . ' - Bab ' . $ch->chapter_number,
+                                'chapter_number_snapshot' => $ch->chapter_number,
+                                'price' => $ch->price,
+                                'created_at' => $createdDate,
+                            ]
+                        );
+
+                        if (Schema::hasTable('entitlements')) {
+                            DB::table('entitlements')->updateOrInsert(
+                                ['user_id' => $reader->id, 'chapter_id' => $ch->id],
+                                [
+                                    'comic_id' => $comic->id,
+                                    'order_id' => $order->id,
+                                    'granted_at' => $createdDate,
+                                    'created_at' => $createdDate,
+                                    'updated_at' => $createdDate,
+                                ]
+                            );
+                        }
+
+                        $royalty = (int) round($ch->price * 0.70);
+                        $totalRoyaltyEarned += $royalty;
+
+                        WalletTransaction::firstOrCreate(
+                            ['reference_number' => $invNum, 'wallet_id' => $wallet->id],
+                            [
+                                'order_id' => $order->id,
+                                'type' => 'credit',
+                                'amount' => $royalty,
+                                'balance_after' => $totalRoyaltyEarned,
+                                'description' => "Royalty 70% share for {$comic->title} - Bab {$ch->chapter_number}",
+                                'created_at' => $createdDate,
+                            ]
+                        );
+                    }
+                }
+            }
+
+            // WD Approved 1.500.000 (Jika total royalti mencukupi)
+            $wdAmount = 150000;
+            if ($totalRoyaltyEarned >= $wdAmount) {
                 $wdHist = WithdrawalRequest::firstOrCreate(
                     [
                         'wallet_id' => $wallet->id,
-                        'bank_account_number' => '0987654321',
-                        'amount' => 1_500_000,
+                        'bank_account_number' => $realmProfile->bank_account_number ?: '0987654321',
+                        'amount' => $wdAmount,
                     ],
                     [
                         'publisher_id' => $realmProfile->id,
                         'bank_name' => $realmProfile->bank_name ?: 'Mandiri',
                         'bank_account_name' => $realmProfile->bank_account_name ?: 'Ari Setiawan',
                         'status' => 'approved',
-                        'processed_at' => now()->subMonths(2),
-                        'created_at' => now()->subMonths(2),
+                        'processed_at' => now()->subDays(5),
+                        'created_at' => now()->subDays(7),
                     ]
                 );
 
@@ -111,74 +256,23 @@ class PayoutSeeder extends Seeder
                     ],
                     [
                         'type' => 'debit',
-                        'amount' => 1_500_000,
-                        'balance_after' => 2_000_000,
+                        'amount' => $wdAmount,
+                        'balance_after' => $totalRoyaltyEarned - $wdAmount,
                         'description' => "Penarikan dana payout royalti transfer manual ke {$wdHist->bank_name} ({$wdHist->bank_account_number})",
-                        'created_at' => now()->subMonths(2),
+                        'created_at' => now()->subDays(5),
                     ]
                 );
 
                 $wallet->update([
-                    'total_earned' => 3_500_000,
-                    'total_withdrawn' => 1_500_000,
-                    'balance' => 2_000_000,
+                    'total_earned' => $totalRoyaltyEarned,
+                    'total_withdrawn' => $wdAmount,
+                    'balance' => $totalRoyaltyEarned - $wdAmount,
                 ]);
-            }
-        }
-
-        // 3. Dark Phoenix Studio (Bimo Saputra - Blocked)
-        $darkProfile = PublisherProfile::where('brand_name', 'Dark Phoenix Studio')->first();
-        if ($darkProfile) {
-            $wallet = PublisherWallet::where('publisher_id', $darkProfile->id)->first();
-            if ($wallet) {
-                WalletTransaction::firstOrCreate(
-                    [
-                        'wallet_id' => $wallet->id,
-                        'reference_number' => 'EARN-DARK-001',
-                    ],
-                    [
-                        'type' => 'credit',
-                        'amount' => 2_000_000,
-                        'balance_after' => 2_000_000,
-                        'description' => 'Akumulasi pendapatan penjualan bab komik',
-                        'created_at' => now()->subMonths(10),
-                    ]
-                );
-
-                $wdDark = WithdrawalRequest::firstOrCreate(
-                    [
-                        'wallet_id' => $wallet->id,
-                        'bank_account_number' => '7788990011',
-                        'amount' => 1_500_000,
-                    ],
-                    [
-                        'publisher_id' => $darkProfile->id,
-                        'bank_name' => $darkProfile->bank_name ?: 'CIMB Niaga',
-                        'bank_account_name' => $darkProfile->bank_account_name ?: 'Bimo Saputra',
-                        'status' => 'approved',
-                        'processed_at' => now()->subMonths(6),
-                        'created_at' => now()->subMonths(6),
-                    ]
-                );
-
-                WalletTransaction::firstOrCreate(
-                    [
-                        'wallet_id' => $wallet->id,
-                        'reference_number' => 'WD-' . $wdDark->id,
-                    ],
-                    [
-                        'type' => 'debit',
-                        'amount' => 1_500_000,
-                        'balance_after' => 500_000,
-                        'description' => "Penarikan dana payout royalti transfer manual ke {$wdDark->bank_name} ({$wdDark->bank_account_number})",
-                        'created_at' => now()->subMonths(6),
-                    ]
-                );
-
+            } else {
                 $wallet->update([
-                    'total_earned' => 2_000_000,
-                    'total_withdrawn' => 1_500_000,
-                    'balance' => 500_000,
+                    'total_earned' => $totalRoyaltyEarned,
+                    'total_withdrawn' => 0,
+                    'balance' => $totalRoyaltyEarned,
                 ]);
             }
         }

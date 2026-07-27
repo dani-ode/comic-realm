@@ -133,22 +133,38 @@ class TriPayGateway implements PaymentGateway
     {
         $transaction = new Transaction($this->client);
 
-        foreach ($order->items as $item) {
+        $order->loadMissing(['items.comic', 'user']);
+
+        if ($order->items && $order->items->isNotEmpty()) {
+            foreach ($order->items as $item) {
+                $itemTitle = $item->title_snapshot ?: ('Bab Komik #' . $item->chapter_number_snapshot);
+                $comicSlug = $item->comic->slug ?? 'comic';
+                $coverImage = $item->comic->cover_image ?? null;
+
+                $transaction->addOrderItem(
+                    $itemTitle,
+                    (int) $item->price,
+                    1,
+                    'CH-' . $item->chapter_id,
+                    route('comics.show', $comicSlug),
+                    $coverImage
+                );
+            }
+        } else {
             $transaction->addOrderItem(
-                $item->title_snapshot,
-                $item->price,
+                'Pembelian Bab Komik #' . $order->order_number,
+                (int) $order->total_amount,
                 1,
-                'CH-' . $item->chapter_id,
-                route('comics.show', $item->comic->slug ?? 'comic'),
-                $item->comic->cover_image ?? null
+                'ORD-' . $order->id,
+                url('/')
             );
         }
 
         $payload = [
             'method' => strtoupper($paymentMethod),
             'merchant_ref' => $order->order_number,
-            'customer_name' => $order->user->name,
-            'customer_email' => $order->user->email,
+            'customer_name' => $order->user->name ?? 'Pembeli ComicRealm',
+            'customer_email' => $order->user->email ?? 'customer@comicrealm.test',
             'customer_phone' => $order->user->phone ?: '081234567890',
             'return_url' => route('orders.show', $order->order_number),
             'expired_time' => $order->expired_at ? $order->expired_at->timestamp : (time() + 86400),

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Link, usePage, useForm } from '@inertiajs/vue3';
+import ToastContainer from '@/Components/UI/ToastContainer.vue';
+import TopProgressBar from '@/Components/UI/TopProgressBar.vue';
+import FullpageLoader from '@/Components/UI/FullpageLoader.vue';
 import {
   ShieldCheckIcon,
   BuildingOffice2Icon,
@@ -91,6 +94,10 @@ const submitPasswordUpdate = () => {
 
 <template>
   <div class="min-h-screen bg-slate-950 text-slate-100 flex">
+    <!-- Global Notifications & Loaders -->
+    <ToastContainer />
+    <TopProgressBar />
+    <FullpageLoader />
     <!-- Sidebar -->
     <aside
       class="fixed inset-y-0 left-0 z-40 bg-slate-900 border-r border-slate-800/80 transition-all duration-300 flex flex-col justify-between"
