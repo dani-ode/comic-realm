@@ -101,23 +101,6 @@ app/
 
 ---
 
-## 📚 Cetak Biru Dokumentasi (`.blueprint/`)
-
-Dokumentasi rancangan lengkap platform dapat diakses di folder `.blueprint`:
-
-- **[README.md](file://.blueprint/README.md)**: Ringkasan Visi Produk & Pilar Ekosistem.
-- **[architecture.md](file://.blueprint/architecture.md)**: Arsitektur DDD, Layering System, dan Engine Reader.
-- **[folder-structure.md](file://.blueprint/folder-structure.md)**: Cetak Biru Hirarki Folder Lengkap Backend & Frontend.
-- **[database-schema.md](file://.blueprint/database-schema.md)**: Skema Basis Data 32 Tabel MySQL, ERD Diagram, & Sekuensi Migrasi.
-- **[commerce-and-tripay.md](file://.blueprint/commerce-and-tripay.md)**: Transaksi Commerce, Contract Interface, & Webhook TriPay.
-- **[publisher-and-creator-economy.md](file://.blueprint/publisher-and-creator-economy.md)**: Onboarding Publisher, WebP Upload Pipeline, & Wallet Ledger.
-- **[api-and-routes.md](file://.blueprint/api-and-routes.md)**: Spesifikasi Rute & Endpoint API untuk 10 File Rute Terpisah.
-- **[implementation-guide.md](file://.blueprint/implementation-guide.md)**: Panduan Eksekusi Developer 14 Step.
-- **[testing-and-qa-guide.md](file://.blueprint/testing-and-qa-guide.md)**: Panduan Testing & QA dengan Pest PHP.
-- **[development-phases.md](file://.blueprint/development-phases.md)**: Roadmap 14 Phase Domain & Strategi 3 Milestone.
-
----
-
 ## ⚡ Panduan Memulai (Langkah-Langkah Menjalankan Website di Lingkungan Lokal)
 
 ### 1. Prasyarat Sistem (Requirements)
