@@ -9,15 +9,32 @@ use Illuminate\Database\Eloquent\Collection;
 
 class ComicQuery
 {
-    public function getFeaturedComics(int $limit = 5): Collection
+    public function getFeaturedComics(int $limit = 6): Collection
     {
-        return Comic::query()
+        $featured = Comic::query()
             ->with(['genres', 'publisher'])
             ->where('publication_status', 'published')
             ->where('is_featured', true)
             ->latest('featured_at')
             ->take($limit)
             ->get();
+
+        if ($featured->count() < $limit) {
+            $remainingCount = $limit - $featured->count();
+            $existingIds = $featured->pluck('id')->toArray();
+
+            $fillers = Comic::query()
+                ->with(['genres', 'publisher'])
+                ->where('publication_status', 'published')
+                ->whereNotIn('id', $existingIds)
+                ->orderByDesc('total_views')
+                ->take($remainingCount)
+                ->get();
+
+            $featured = $featured->concat($fillers);
+        }
+
+        return $featured;
     }
 
     public function getPopularComics(int $limit = 6): Collection

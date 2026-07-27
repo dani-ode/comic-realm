@@ -161,7 +161,7 @@ defineProps<{
             >
               <ChevronRightIcon class="w-4 h-4" />
             </button>
-            <Link href="/comics" class="flex items-center gap-1 text-xs font-bold text-sky-400 hover:underline ml-1">
+            <Link href="/comics?sort=popular" class="flex items-center gap-1 text-xs font-bold text-sky-400 hover:underline ml-1">
               View All <ArrowRightIcon class="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -178,7 +178,7 @@ defineProps<{
           @mousemove="onMouseMove"
         >
           <div
-            v-for="comic in featuredComics"
+            v-for="comic in featuredComics.slice(0, 6)"
             :key="comic.id"
             class="shrink-0 w-40 sm:w-44 lg:w-48 flex flex-col"
           >

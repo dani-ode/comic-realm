@@ -196,4 +196,23 @@ class UploadChapterPagesBatch
                 ->toArray();
         });
     }
+
+    /**
+     * Delete all pages in a chapter.
+     */
+    public function deleteAllPages(Chapter $chapter): array
+    {
+        return DB::transaction(function () use ($chapter) {
+            $pages = ChapterPage::where('chapter_id', $chapter->id)->get();
+
+            foreach ($pages as $page) {
+                if ($page->image_path && $page->image_path !== 'external' && Storage::disk('public')->exists($page->image_path)) {
+                    Storage::disk('public')->delete($page->image_path);
+                }
+                $page->delete();
+            }
+
+            return [];
+        });
+    }
 }

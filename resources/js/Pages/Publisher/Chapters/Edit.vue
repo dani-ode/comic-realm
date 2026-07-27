@@ -91,6 +91,29 @@ const deletePageRealtime = async (pageId: number, pageNum: number) => {
   }
 };
 
+// Realtime Delete All Pages
+const deleteAllPagesRealtime = async () => {
+  if (!confirm(`Apakah Anda yakin ingin menghapus SEMUA (${pagesList.value.length}) halaman gambar pada bab ini? Tindakan ini tidak dapat dibatalkan.`)) return;
+
+  isProcessing.value = true;
+  errorMessage.value = null;
+  statusMessage.value = null;
+
+  try {
+    const res = await axios.delete(
+      `/publisher/comics/${props.comic.id}/chapters/${props.chapter.id}/pages-all`
+    );
+    if (res.data.success) {
+      pagesList.value = [];
+      statusMessage.value = 'Semua halaman gambar berhasil dihapus.';
+    }
+  } catch (err: any) {
+    errorMessage.value = err.response?.data?.message || 'Gagal menghapus semua halaman.';
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
 // Realtime Move Page (Left/Right)
 const movePagePosition = async (index: number, direction: 'left' | 'right') => {
   const targetIndex = direction === 'left' ? index - 1 : index + 1;
@@ -305,14 +328,26 @@ const handleFileSelect = async (event: Event, insertAfterNum: number | null = nu
             @change="(e) => handleFileSelect(e, null)"
           />
 
-          <button
-            @click="appendFileInput?.click()"
-            :disabled="isUploading"
-            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 transition shadow-md shadow-indigo-600/20 shrink-0"
-          >
-            <PlusIcon class="w-4 h-4" />
-            + Unggah Gambar / File .txt Link
-          </button>
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              v-if="pagesList.length"
+              @click="deleteAllPagesRealtime"
+              :disabled="isProcessing || isUploading"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-400 bg-rose-950/40 border border-rose-800/80 hover:bg-rose-900 hover:text-white disabled:opacity-50 transition shadow-md"
+            >
+              <TrashIcon class="w-4 h-4" />
+              Hapus Semua Gambar
+            </button>
+
+            <button
+              @click="appendFileInput?.click()"
+              :disabled="isUploading"
+              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 transition shadow-md shadow-indigo-600/20"
+            >
+              <PlusIcon class="w-4 h-4" />
+              + Unggah Gambar / File .txt Link
+            </button>
+          </div>
         </div>
 
         <!-- Progress Spinner -->

@@ -236,4 +236,19 @@ class PublisherChapterController extends Controller
             'message' => 'Urutan halaman berhasil diperbarui.',
         ]);
     }
+
+    public function deleteAllPagesRealtime(int $comicId, int $chapterId, Request $request, UploadChapterPagesBatch $uploadBatch): JsonResponse
+    {
+        $user = $request->user();
+        $comic = Comic::where('id', $comicId)->where('publisher_id', $user->id)->firstOrFail();
+        $chapter = Chapter::where('id', $chapterId)->where('comic_id', $comic->id)->firstOrFail();
+
+        $uploadBatch->deleteAllPages($chapter);
+
+        return response()->json([
+            'success' => true,
+            'pages' => [],
+            'message' => 'Semua halaman gambar pada bab ini telah dihapus.',
+        ]);
+    }
 }
