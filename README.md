@@ -1,4 +1,4 @@
-# The ComicRealm 📖🚀
+# ComicRealm 📖🚀
 
 **The ComicRealm** adalah platform *Webcomic Marketplace*, *Continuous Vertical Webtoon Reader*, dan *Creator Economy Publishing Platform* yang dibangun menggunakan arsitektur **Domain-Driven Design (DDD)** berbasis **Laravel 13 Monolith + Inertia.js + Vue 3 + TypeScript + Tailwind CSS v4**, terintegrasi dengan **TriPay Payment Gateway**.
 
@@ -23,9 +23,9 @@ Untuk menguji seluruh aliran fitur platform (Admin, Publisher, maupun Reader) di
 
 | Peran (Role) | Email / Username | Password | Fitur & Akses Utama |
 | --- | --- | --- | --- |
-| **Super Admin** | `admin@comicrealm.test` (`admin`) | `password123` | Control Panel, Monitoring Transaksi TriPay, Moderasi Komik & Approval Payout |
-| **Publisher / Creator** | `publisher@comicrealm.test` (`dani`) | `password123` | Publisher Dashboard, Upload Bab Komik WebP, Wallet Ledger & Penarikan Bank |
-| **Reader / Pembaca** | `reader@comicrealm.test` (`puput`) | `password123` | Continuous Scroll Reader, Shopping Cart, TriPay Checkout, Bookmark & Komentar |
+| **Super Admin** | `admin@comicrealm.test` | `password123` | Control Panel, Monitoring Transaksi TriPay, Moderasi Komik & Approval Payout |
+| **Publisher / Creator** | `publisher@comicrealm.test` | `password123` | Publisher Dashboard, Upload Bab Komik WebP, Wallet Ledger & Penarikan Bank |
+| **Reader / Pembaca** | `reader@comicrealm.test` | `password123` | Continuous Scroll Reader, Shopping Cart, TriPay Checkout, Bookmark & Komentar |
 
 ---
 
