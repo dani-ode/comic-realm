@@ -15,6 +15,7 @@ import {
   ArrowPathIcon,
   BookOpenIcon,
   ArrowRightIcon,
+  ShoppingBagIcon,
 } from '@heroicons/vue/24/outline';
 import { useToast } from '@/composables/useToast';
 
@@ -81,13 +82,23 @@ const copiedCode = ref(false);
 const copiedInvoice = ref(false);
 const isCheckingStatus = ref(false);
 
+const isPendingPayment = computed(() => {
+  const s = (props.payment.status || '').toLowerCase();
+  return s === 'unpaid' || s === 'pending';
+});
+
+const isPaidPayment = computed(() => {
+  const s = (props.payment.status || '').toLowerCase();
+  return s === 'paid' || s === 'completed' || s === 'success';
+});
+
 // Live Countdown Timer
 const timeLeft = ref('');
 const isExpired = ref(false);
 let timerInterval: any = null;
 
 const updateCountdown = () => {
-  if (!props.payment.expired_at) {
+  if (!props.payment.expired_at || !isPendingPayment.value) {
     timeLeft.value = '';
     return;
   }
@@ -117,21 +128,26 @@ const updateCountdown = () => {
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 
 const startAutoPolling = () => {
-  const s = (props.payment.status || '').toLowerCase();
-  if (s === 'paid' || s === 'completed' || s === 'success' || s === 'expired' || s === 'failed') {
+  if (!isPendingPayment.value) {
     return;
   }
 
   pollInterval = setInterval(() => {
     router.reload({
       only: ['payment'],
+      showProgress: false,
       onSuccess: (page) => {
         const updatedPayment = (page.props as any).payment;
         if (updatedPayment) {
           const newStatus = (updatedPayment.status || '').toLowerCase();
-          if (newStatus === 'paid' || newStatus === 'completed' || newStatus === 'success') {
-            toastSuccess('Pembayaran LUNAS! Komik Anda sudah dapat dibaca.');
-            if (pollInterval) clearInterval(pollInterval);
+          if (newStatus !== 'unpaid' && newStatus !== 'pending') {
+            if (pollInterval) {
+              clearInterval(pollInterval);
+              pollInterval = null;
+            }
+            if (newStatus === 'paid' || newStatus === 'completed' || newStatus === 'success') {
+              toastSuccess('Pembayaran LUNAS! Komik Anda sudah dapat dibaca.');
+            }
           }
         }
       },
@@ -140,9 +156,11 @@ const startAutoPolling = () => {
 };
 
 onMounted(() => {
-  updateCountdown();
-  timerInterval = setInterval(updateCountdown, 1000);
-  startAutoPolling();
+  if (isPendingPayment.value) {
+    updateCountdown();
+    timerInterval = setInterval(updateCountdown, 1000);
+    startAutoPolling();
+  }
 });
 
 onUnmounted(() => {
@@ -211,11 +229,25 @@ const getStatusBadge = (status: string) => {
       icon: ClockIcon,
     };
   }
-  if (s === 'expired' || s === 'failed') {
+  if (s === 'expired') {
     return {
-      label: 'KEDALUWARSA / GAGAL',
+      label: 'KEDALUWARSA',
       class: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
       icon: XCircleIcon,
+    };
+  }
+  if (s === 'failed') {
+    return {
+      label: 'PEMBAYARAN GAGAL',
+      class: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
+      icon: XCircleIcon,
+    };
+  }
+  if (s === 'refund' || s === 'cancelled') {
+    return {
+      label: 'DIKEMBALIKAN / DIBATALKAN',
+      class: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+      icon: ExclamationTriangleIcon,
     };
   }
   return {
@@ -291,9 +323,9 @@ const qrisImageUrl = computed(() => {
               </button>
             </div>
 
-            <!-- Live Countdown Timer (Only when NOT PAID) -->
+            <!-- Live Countdown Timer (ONLY for UNPAID / PENDING) -->
             <div
-              v-if="payment.expired_at && payment.status.toLowerCase() !== 'paid' && payment.status.toLowerCase() !== 'completed' && payment.status.toLowerCase() !== 'success'"
+              v-if="isPendingPayment && payment.expired_at"
               class="flex items-center gap-2 mt-1.5 text-xs"
             >
               <ClockIcon class="w-4 h-4 text-amber-400 shrink-0" />
@@ -318,58 +350,120 @@ const qrisImageUrl = computed(() => {
           </div>
         </div>
 
-        <!-- QRIS Payment Display Box -->
-        <div v-if="isQrisPayment" class="bg-slate-950/80 border border-slate-800 rounded-2xl p-6 text-center space-y-4 relative group">
-          <span class="text-xs text-sky-400 uppercase tracking-wider font-extrabold block">
-            Scan Kode QRIS ({{ payment.payment_name }})
-          </span>
-
-          <div class="flex flex-col items-center justify-center space-y-3">
-            <div class="p-3.5 bg-white rounded-3xl shadow-2xl border-4 border-slate-800 inline-block group-hover:scale-105 transition duration-300">
-              <img
-                :src="qrisImageUrl"
-                alt="QRIS Payment Code"
-                class="w-48 h-48 sm:w-56 sm:h-56 object-contain rounded-xl"
-              />
-            </div>
-            <p class="text-xs text-slate-400 max-w-sm leading-relaxed">
-              Buka aplikasi <strong>GoPay, OVO, DANA, ShopeePay, BCA Mobile</strong>, atau m-Banking pilihan Anda lalu pilih fitur <strong>Scan / Pindai QRIS</strong>.
-            </p>
-          </div>
-
-          <!-- Atas Nama (A.N.) Account Info -->
-          <div class="pt-1 text-xs text-slate-400 flex items-center justify-center gap-1.5 flex-wrap">
-            <span>Atas Nama (A.N.):</span>
-            <span class="px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-300 font-bold">
-              ComicRealm - {{ payment.user?.name || 'Pelanggan' }}
+        <!-- ACTIVE UNPAID / PENDING PAYMENT DISPLAY BOX -->
+        <template v-if="isPendingPayment">
+          <!-- QRIS Payment Display Box -->
+          <div v-if="isQrisPayment" class="bg-slate-950/80 border border-slate-800 rounded-2xl p-6 text-center space-y-4 relative group">
+            <span class="text-xs text-sky-400 uppercase tracking-wider font-extrabold block">
+              Scan Kode QRIS ({{ payment.payment_name }})
             </span>
-          </div>
 
-          <!-- Total Amount Summary -->
-          <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs sm:text-sm px-2">
-            <span class="text-slate-400">Total Nominal Pembayaran:</span>
-            <span class="text-xl sm:text-2xl font-black text-amber-400">{{ formatRupiah(totalAmountWithFee) }}</span>
-          </div>
-
-          <!-- Active Check Payment Status or Go To Library Button -->
-          <div class="pt-2">
-            <button
-              v-if="payment.status.toLowerCase() !== 'paid' && payment.status.toLowerCase() !== 'completed' && payment.status.toLowerCase() !== 'success'"
-              @click="checkPaymentStatus"
-              :disabled="isCheckingStatus"
-              class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-xs sm:text-sm font-bold text-white transition shadow-xl shadow-sky-600/30 active:scale-[0.98] disabled:opacity-50"
-            >
-              <ArrowPathIcon class="w-4 h-4 shrink-0" :class="{ 'animate-spin': isCheckingStatus }" />
-              <span>{{ isCheckingStatus ? 'Mengecek Status Pembayaran...' : 'Cek Status Pembayaran' }}</span>
-            </button>
-            <div v-else class="space-y-3 pt-1">
-              <p class="text-xs text-emerald-400 font-semibold flex items-center justify-center gap-1.5">
-                <CheckCircleIcon class="w-4 h-4 text-emerald-400 shrink-0" />
-                Pembayaran Berhasil Dikonfirmasi & Hak Akses Telah Diberikan!
+            <div class="flex flex-col items-center justify-center space-y-3">
+              <div class="p-3.5 bg-white rounded-3xl shadow-2xl border-4 border-slate-800 inline-block group-hover:scale-105 transition duration-300">
+                <img
+                  :src="qrisImageUrl"
+                  alt="QRIS Payment Code"
+                  class="w-48 h-48 sm:w-56 sm:h-56 object-contain rounded-xl"
+                />
+              </div>
+              <p class="text-xs text-slate-400 max-w-sm leading-relaxed">
+                Buka aplikasi <strong>GoPay, OVO, DANA, ShopeePay, BCA Mobile</strong>, atau m-Banking pilihan Anda lalu pilih fitur <strong>Scan / Pindai QRIS</strong>.
               </p>
+            </div>
+
+            <!-- Atas Nama (A.N.) Account Info -->
+            <div class="pt-1 text-xs text-slate-400 flex items-center justify-center gap-1.5 flex-wrap">
+              <span>Atas Nama (A.N.):</span>
+              <span class="px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-300 font-bold">
+                ComicRealm - {{ payment.user?.name || 'Pelanggan' }}
+              </span>
+            </div>
+
+            <!-- Total Amount Summary -->
+            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs sm:text-sm px-2">
+              <span class="text-slate-400">Total Nominal Pembayaran:</span>
+              <span class="text-xl sm:text-2xl font-black text-amber-400">{{ formatRupiah(totalAmountWithFee) }}</span>
+            </div>
+
+            <!-- Active Check Payment Status Button -->
+            <div class="pt-2">
+              <button
+                @click="checkPaymentStatus"
+                :disabled="isCheckingStatus"
+                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-xs sm:text-sm font-bold text-white transition shadow-xl shadow-sky-600/30 active:scale-[0.98] disabled:opacity-50"
+              >
+                <ArrowPathIcon class="w-4 h-4 shrink-0" :class="{ 'animate-spin': isCheckingStatus }" />
+                <span>{{ isCheckingStatus ? 'Mengecek Status Pembayaran...' : 'Cek Status Pembayaran' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Virtual Account / Retail Code Display Box -->
+          <div v-else class="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 text-center space-y-3 relative group">
+            <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold block">
+              Kode Pembayaran / Nomor Virtual Account ({{ payment.payment_name }})
+            </span>
+
+            <div class="flex items-center justify-center gap-2.5 flex-wrap">
+              <div class="text-lg sm:text-xl font-mono font-bold text-sky-400 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl tracking-wider select-all">
+                {{ payment.pay_code || payment.tripay_reference || 'QRIS Payment' }}
+              </div>
+
+              <button
+                v-if="payment.pay_code"
+                @click="copyToClipboard(payment.pay_code, 'code')"
+                class="px-3 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 text-xs font-bold transition flex items-center gap-1.5 active:scale-95"
+              >
+                <CheckIcon v-if="copiedCode" class="w-4 h-4 text-emerald-400" />
+                <ClipboardDocumentIcon v-else class="w-4 h-4" />
+                <span>{{ copiedCode ? 'Tersalin' : 'Salin' }}</span>
+              </button>
+            </div>
+
+            <!-- Atas Nama (A.N.) Account Info -->
+            <div class="pt-1 text-xs text-slate-400 flex items-center justify-center gap-1.5 flex-wrap">
+              <span>Atas Nama (A.N.):</span>
+              <span class="px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-300 font-bold">
+                ComicRealm - {{ payment.user?.name || 'Pelanggan' }}
+              </span>
+            </div>
+
+            <!-- Total Amount Summary -->
+            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs sm:text-sm px-2">
+              <span class="text-slate-400">Total Nominal Pembayaran:</span>
+              <span class="text-xl sm:text-2xl font-black text-amber-400">{{ formatRupiah(totalAmountWithFee) }}</span>
+            </div>
+
+            <!-- Active Check Payment Status Button -->
+            <div class="pt-2">
+              <button
+                @click="checkPaymentStatus"
+                :disabled="isCheckingStatus"
+                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-xs sm:text-sm font-bold text-white transition shadow-xl shadow-sky-600/30 active:scale-[0.98] disabled:opacity-50"
+              >
+                <ArrowPathIcon class="w-4 h-4 shrink-0" :class="{ 'animate-spin': isCheckingStatus }" />
+                <span>{{ isCheckingStatus ? 'Mengecek Status Pembayaran...' : 'Cek Status Pembayaran' }}</span>
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <!-- CASE 2: PAID / COMPLETED PAYMENT DISPLAY BOX -->
+        <template v-else-if="isPaidPayment">
+          <div class="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-6 text-center space-y-4">
+            <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
+              <CheckCircleIcon class="w-7 h-7" />
+            </div>
+            <div class="space-y-1">
+              <h3 class="text-base sm:text-lg font-extrabold text-white">Pembayaran Berhasil Dikonfirmasi!</h3>
+              <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                Transaksi ini telah LUNAS. Hak akses membaca bab komik telah berhasil ditambahkan secara permanen ke akun Anda.
+              </p>
+            </div>
+            <div class="pt-2">
               <Link
                 href="/library"
-                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs sm:text-sm font-bold text-white transition shadow-xl shadow-emerald-600/30 active:scale-[0.98]"
+                class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs sm:text-sm font-bold text-white transition shadow-xl shadow-emerald-600/30 active:scale-[0.98]"
               >
                 <BookOpenIcon class="w-4 h-4 shrink-0" />
                 <span>Buka Perpustakaan & Membaca</span>
@@ -377,71 +471,53 @@ const qrisImageUrl = computed(() => {
               </Link>
             </div>
           </div>
-        </div>
+        </template>
 
-        <!-- Virtual Account / Retail Code Display Box -->
-        <div v-else class="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 text-center space-y-3 relative group">
-          <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold block">
-            Kode Pembayaran / Nomor Virtual Account ({{ payment.payment_name }})
-          </span>
-
-          <div class="flex items-center justify-center gap-2.5 flex-wrap">
-            <div class="text-lg sm:text-xl font-mono font-bold text-sky-400 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl tracking-wider select-all">
-              {{ payment.pay_code || payment.tripay_reference || 'QRIS Payment' }}
+        <!-- CASE 3: EXPIRED / FAILED / REFUND / CANCELLED DISPLAY BOX -->
+        <template v-else>
+          <div class="bg-slate-950/80 border border-rose-500/30 rounded-2xl p-6 text-center space-y-4">
+            <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto shadow-lg shadow-rose-500/10">
+              <XCircleIcon v-if="payment.status.toLowerCase() === 'expired' || payment.status.toLowerCase() === 'failed'" class="w-7 h-7" />
+              <ExclamationTriangleIcon v-else class="w-7 h-7 text-purple-400" />
+            </div>
+            <div class="space-y-1">
+              <h3 class="text-base sm:text-lg font-extrabold text-white">
+                {{ getStatusBadge(payment.status).label }}
+              </h3>
+              <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                <span v-if="payment.status.toLowerCase() === 'expired'">
+                  Batas waktu pembayaran transaksi ini telah habis. Silakan lakukan pemesanan ulang untuk melanjutkan membaca bab komik ini.
+                </span>
+                <span v-else-if="payment.status.toLowerCase() === 'refund'">
+                  Transaksi pembayaran ini telah dikembalikan (REFUND). Dana telah dikreditkan kembali sesuai prosedur TriPay Gateway.
+                </span>
+                <span v-else-if="payment.status.toLowerCase() === 'cancelled'">
+                  Transaksi ini telah dibatalkan.
+                </span>
+                <span v-else>
+                  Pembayaran tidak dapat diproses atau mengalami kegagalan. Silakan coba kembali atau gunakan metode pembayaran lain.
+                </span>
+              </p>
             </div>
 
-            <button
-              v-if="payment.pay_code"
-              @click="copyToClipboard(payment.pay_code, 'code')"
-              class="px-3 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 text-xs font-bold transition flex items-center gap-1.5 active:scale-95"
-            >
-              <CheckIcon v-if="copiedCode" class="w-4 h-4 text-emerald-400" />
-              <ClipboardDocumentIcon v-else class="w-4 h-4" />
-              <span>{{ copiedCode ? 'Tersalin' : 'Salin' }}</span>
-            </button>
-          </div>
-
-          <!-- Atas Nama (A.N.) Account Info -->
-          <div class="pt-1 text-xs text-slate-400 flex items-center justify-center gap-1.5 flex-wrap">
-            <span>Atas Nama (A.N.):</span>
-            <span class="px-2 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-300 font-bold">
-              ComicRealm - {{ payment.user?.name || 'Pelanggan' }}
-            </span>
-          </div>
-
-          <!-- Total Amount Summary -->
-          <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs sm:text-sm px-2">
-            <span class="text-slate-400">Total Nominal Pembayaran:</span>
-            <span class="text-xl sm:text-2xl font-black text-amber-400">{{ formatRupiah(totalAmountWithFee) }}</span>
-          </div>
-
-          <!-- Active Check Payment Status or Go To Library Button -->
-          <div class="pt-2">
-            <button
-              v-if="payment.status.toLowerCase() !== 'paid' && payment.status.toLowerCase() !== 'completed' && payment.status.toLowerCase() !== 'success'"
-              @click="checkPaymentStatus"
-              :disabled="isCheckingStatus"
-              class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-xs sm:text-sm font-bold text-white transition shadow-xl shadow-sky-600/30 active:scale-[0.98] disabled:opacity-50"
-            >
-              <ArrowPathIcon class="w-4 h-4 shrink-0" :class="{ 'animate-spin': isCheckingStatus }" />
-              <span>{{ isCheckingStatus ? 'Mengecek Status Pembayaran...' : 'Cek Status Pembayaran' }}</span>
-            </button>
-            <div v-else class="space-y-3 pt-1">
-              <p class="text-xs text-emerald-400 font-semibold flex items-center justify-center gap-1.5">
-                <CheckCircleIcon class="w-4 h-4 text-emerald-400 shrink-0" />
-                Pembayaran Berhasil Dikonfirmasi & Hak Akses Telah Diberikan!
-              </p>
+            <!-- Action buttons for inactive status -->
+            <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
-                href="/library"
-                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-xs sm:text-sm font-bold text-white transition shadow-xl shadow-emerald-600/30 active:scale-[0.98]"
+                href="/cart"
+                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-xs sm:text-sm font-bold text-white transition shadow-xl shadow-sky-600/30 active:scale-[0.98]"
               >
-                <BookOpenIcon class="w-4 h-4 shrink-0" />
-                <span>Buka Perpustakaan & Membaca</span>
-                <ArrowRightIcon class="w-4 h-4 shrink-0" />
+                <ShoppingBagIcon class="w-4 h-4 shrink-0" />
+                <span>Buat Pesanan Baru</span>
+              </Link>
+              <Link
+                href="/orders"
+                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs sm:text-sm font-bold text-slate-300 transition active:scale-[0.98]"
+              >
+                <span>Lihat Riwayat Pesanan</span>
               </Link>
             </div>
           </div>
-        </div>
+        </template>
       </div>
 
       <!-- Order Items Detail List -->
@@ -517,9 +593,9 @@ const qrisImageUrl = computed(() => {
         </div>
       </div>
 
-      <!-- Step-by-Step Payment Instructions (Only when NOT PAID) -->
+      <!-- Step-by-Step Payment Instructions (ONLY FOR UNPAID / PENDING) -->
       <div
-        v-if="payment.instructions && payment.instructions.length && payment.status.toLowerCase() !== 'paid' && payment.status.toLowerCase() !== 'completed' && payment.status.toLowerCase() !== 'success'"
+        v-if="isPendingPayment && payment.instructions && payment.instructions.length"
         class="bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-6 shadow-xl space-y-6"
       >
         <h2 class="text-sm font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800/80 pb-3">

@@ -10,12 +10,12 @@ class OrderNumberGenerator
     public function generate(): string
     {
         $datePrefix = now()->format('Ymd');
-        $random = strtoupper(Str::random(4));
+        $random = strtoupper(Str::random(6));
 
         $orderNumber = "INV-{$datePrefix}-{$random}";
 
         while (Order::where('order_number', $orderNumber)->exists()) {
-            $random = strtoupper(Str::random(4));
+            $random = strtoupper(Str::random(6));
             $orderNumber = "INV-{$datePrefix}-{$random}";
         }
 

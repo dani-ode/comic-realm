@@ -51,7 +51,7 @@ class PayoutSeeder extends Seeder
                         // Tidak semua reader beli semua chapter (pola kombinasi)
                         if (($comic->id + $ch->id + $reader->id) % 3 === 0) {
                             $orderCounter++;
-                            $invNum = sprintf('INV-202607%02d-DANI%03d', rand(10, 26), $orderCounter);
+                            $invNum = 'INV-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(6));
                             $createdDate = now()->subDays(rand(1, 20))->subHours(rand(1, 12));
 
                             $order = Order::firstOrCreate(
@@ -119,29 +119,27 @@ class PayoutSeeder extends Seeder
                 ->first();
 
             if ($firstPaidCh) {
-                $pendingOrder = Order::firstOrCreate(
-                    ['order_number' => 'INV-20260727-PEND01'],
-                    [
-                        'user_id' => $readers->first()->id,
-                        'subtotal' => $firstPaidCh->price,
-                        'tax_amount' => 0,
-                        'fee_amount' => 0,
-                        'total_amount' => $firstPaidCh->price,
-                        'status' => 'pending',
-                        'created_at' => now()->subHours(2),
-                    ]
-                );
+                $pendingInv = 'INV-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(6));
+                $pendingOrder = Order::create([
+                    'order_number' => $pendingInv,
+                    'user_id' => $readers->first()->id,
+                    'subtotal' => $firstPaidCh->price,
+                    'tax_amount' => 0,
+                    'fee_amount' => 0,
+                    'total_amount' => $firstPaidCh->price,
+                    'status' => 'pending',
+                    'created_at' => now()->subHours(2),
+                ]);
 
-                OrderItem::firstOrCreate(
-                    ['order_id' => $pendingOrder->id, 'chapter_id' => $firstPaidCh->id],
-                    [
-                        'comic_id' => $firstPaidCh->comic_id,
-                        'title_snapshot' => $firstPaidCh->comic->title . ' - Bab ' . $firstPaidCh->chapter_number,
-                        'chapter_number_snapshot' => $firstPaidCh->chapter_number,
-                        'price' => $firstPaidCh->price,
-                        'created_at' => now()->subHours(2),
-                    ]
-                );
+                OrderItem::create([
+                    'order_id' => $pendingOrder->id,
+                    'chapter_id' => $firstPaidCh->id,
+                    'comic_id' => $firstPaidCh->comic_id,
+                    'title_snapshot' => $firstPaidCh->comic->title . ' - Bab ' . $firstPaidCh->chapter_number,
+                    'chapter_number_snapshot' => $firstPaidCh->chapter_number,
+                    'price' => $firstPaidCh->price,
+                    'created_at' => now()->subHours(2),
+                ]);
             }
 
             $wallet->update([
@@ -171,7 +169,7 @@ class PayoutSeeder extends Seeder
                 foreach ($paidChapters as $ch) {
                     foreach ($readers as $reader) {
                         $orderCounter++;
-                        $invNum = sprintf('INV-202607%02d-REALM%03d', rand(1, 15), $orderCounter);
+                        $invNum = 'INV-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(6));
                         $createdDate = now()->subDays(rand(10, 40))->subHours(rand(1, 12));
 
                         $order = Order::firstOrCreate(

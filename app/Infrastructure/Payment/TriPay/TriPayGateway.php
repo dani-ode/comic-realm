@@ -222,7 +222,7 @@ class TriPayGateway implements PaymentGateway
                 }
             }
 
-            $ref = 'T' . date('YmdHis') . rand(100, 999);
+            $ref = 'T' . date('YmdHis') . strtoupper(\Illuminate\Support\Str::random(5));
 
             return Payment::create([
                 'order_id' => $order->id,
@@ -298,11 +298,40 @@ class TriPayGateway implements PaymentGateway
             $apiKey = config('services.tripay.api_key') ?: 'sandbox-apikey';
             $isSandbox = config('services.tripay.is_sandbox', true);
             $baseUrl = $isSandbox ? 'https://tripay.co.id/api-sandbox/' : 'https://tripay.co.id/api/';
-            $targetUrl = $baseUrl . 'transaction/check-status?reference=' . urlencode($reference);
 
+            // 1. Transaction Detail API (Authoritative Status Provider)
+            $detailUrl = $baseUrl . 'transaction/detail?reference=' . urlencode($reference);
+            Log::info("[TriPay API Outgoing Request] GET : {$detailUrl}");
+
+            $response = Http::withToken($apiKey)
+                ->acceptJson()
+                ->get($baseUrl . 'transaction/detail', [
+                    'reference' => $reference,
+                ]);
+
+            if ($response->successful()) {
+                $body = $response->json() ?? [];
+                Log::info("[TriPay API Outgoing Response] GET : {$detailUrl} => HTTP {$response->status()}", $body);
+
+                if (isset($body['success']) && $body['success'] && isset($body['data'])) {
+                    $data = $body['data'];
+                    $status = $this->parseTriPayStatus($body);
+                    return [
+                        'success' => true,
+                        'reference' => $data['reference'] ?? $reference,
+                        'merchant_ref' => $data['merchant_ref'] ?? null,
+                        'status' => $status,
+                        'paid_at' => isset($data['paid_at']) ? date('Y-m-d H:i:s', $data['paid_at']) : null,
+                        'message' => "Status transaksi saat ini: {$status}",
+                        'data' => $data,
+                    ];
+                }
+            }
+
+            // 2. Fallback to check-status endpoint if detail API fails
+            $targetUrl = $baseUrl . 'transaction/check-status?reference=' . urlencode($reference);
             Log::info("[TriPay API Outgoing Request] GET : {$targetUrl}");
 
-            // 1. Direct call to TriPay check-status endpoint as documented
             $response = Http::withToken($apiKey)
                 ->acceptJson()
                 ->get($baseUrl . 'transaction/check-status', [
@@ -311,8 +340,6 @@ class TriPayGateway implements PaymentGateway
 
             if ($response->successful()) {
                 $body = $response->json() ?? [];
-                Log::info("[TriPay API Outgoing Response] GET : {$targetUrl} => HTTP {$response->status()}", $body);
-
                 if (isset($body['success']) && $body['success']) {
                     $status = $this->parseTriPayStatus($body);
                     return [
@@ -324,31 +351,19 @@ class TriPayGateway implements PaymentGateway
                     ];
                 }
             }
-
-            // 2. Fallback to transaction detail SDK
-            $detailUrl = $baseUrl . 'transaction/detail?reference=' . urlencode($reference);
-            Log::info("[TriPay API Outgoing Request] GET : {$detailUrl}");
-
-            $transaction = new Transaction($this->client);
-            $response = $transaction->detail($reference);
-            $body = json_decode((string) $response->getBody(), true) ?? [];
-
-            Log::info("[TriPay API Outgoing Response] GET : {$detailUrl} => ", $body);
-
-            if (isset($body['success']) && $body['success'] && isset($body['data'])) {
-                $data = $body['data'];
-                $status = $this->parseTriPayStatus($body);
-                return [
-                    'success' => true,
-                    'reference' => $data['reference'] ?? $reference,
-                    'merchant_ref' => $data['merchant_ref'] ?? null,
-                    'status' => $status,
-                    'paid_at' => isset($data['paid_at']) ? date('Y-m-d H:i:s', $data['paid_at']) : null,
-                    'data' => $data,
-                ];
-            }
         } catch (\Throwable $e) {
             Log::warning('[TriPay API Outgoing Exception] checkTransactionStatus error: ' . $e->getMessage());
+        }
+
+        $isSandbox = config('services.tripay.is_sandbox', true);
+        $apiKey = config('services.tripay.api_key');
+        if ($isSandbox || empty($apiKey) || $apiKey === 'sandbox-apikey') {
+            return [
+                'success' => true,
+                'reference' => $reference,
+                'status' => 'UNPAID',
+                'message' => 'Status transaksi saat ini UNPAID (TriPay Sandbox Mode).',
+            ];
         }
 
         return [
@@ -362,18 +377,18 @@ class TriPayGateway implements PaymentGateway
         $rawStatus = strtoupper((string) ($body['data']['status'] ?? $body['status'] ?? ''));
         if ($rawStatus !== '') {
             return match ($rawStatus) {
-                'DIBAYAR' => 'PAID',
-                'BELUM DIBAYAR' => 'UNPAID',
-                'KADALUARSA' => 'EXPIRED',
-                'GAGAL' => 'FAILED',
-                'DIKEMBALIKAN' => 'REFUND',
+                'DIBAYAR', 'PAID' => 'PAID',
+                'BELUM DIBAYAR', 'UNPAID', 'PENDING' => 'UNPAID',
+                'KADALUARSA', 'EXPIRED' => 'EXPIRED',
+                'GAGAL', 'FAILED' => 'FAILED',
+                'DIKEMBALIKAN', 'REFUND', 'CANCELLED' => 'REFUND',
                 default => $rawStatus,
             };
         }
 
         $message = strtoupper((string) ($body['message'] ?? ''));
-        if (str_contains($message, 'DIBAYAR') || str_contains($message, 'PAID')) {
-            return 'PAID';
+        if (str_contains($message, 'BELUM DIBAYAR') || str_contains($message, 'UNPAID') || str_contains($message, 'PENDING')) {
+            return 'UNPAID';
         }
         if (str_contains($message, 'KADALUARSA') || str_contains($message, 'EXPIRED')) {
             return 'EXPIRED';
@@ -384,8 +399,8 @@ class TriPayGateway implements PaymentGateway
         if (str_contains($message, 'DIKEMBALIKAN') || str_contains($message, 'REFUND')) {
             return 'REFUND';
         }
-        if (str_contains($message, 'BELUM DIBAYAR') || str_contains($message, 'UNPAID')) {
-            return 'UNPAID';
+        if (str_contains($message, 'DIBAYAR') || str_contains($message, 'PAID')) {
+            return 'PAID';
         }
 
         return 'UNPAID';
