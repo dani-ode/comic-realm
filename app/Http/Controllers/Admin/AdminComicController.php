@@ -7,6 +7,7 @@ use App\Domain\Comic\Models\Genre;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -14,6 +15,38 @@ use App\Domain\Publisher\Models\PublisherProfile;
 
 class AdminComicController extends Controller
 {
+    protected function storeImageIfBase64(?string $imageInput, string $directory = 'comics/covers'): ?string
+    {
+        if (! $imageInput) {
+            return null;
+        }
+
+        if (! str_starts_with($imageInput, 'data:image')) {
+            return $imageInput;
+        }
+
+        preg_match('/data:image\/(.*?);base64,(.*)/s', $imageInput, $matches);
+        if (empty($matches[2])) {
+            return $imageInput;
+        }
+
+        $extension = $matches[1] ?? 'webp';
+        if ($extension === 'jpeg') {
+            $extension = 'jpg';
+        }
+
+        $data = base64_decode($matches[2]);
+        if ($data === false) {
+            return $imageInput;
+        }
+
+        $filename = uniqid('img_') . '_' . time() . '.' . $extension;
+        $path = "{$directory}/{$filename}";
+
+        Storage::disk('public')->put($path, $data);
+
+        return Storage::url($path);
+    }
     public function index(Request $request): InertiaResponse
     {
         $status = $request->query('status');
@@ -77,7 +110,7 @@ class AdminComicController extends Controller
         $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
-            'cover_image' => ['nullable', 'string', 'max:500'],
+            'cover_image' => ['nullable', 'string'],
             'author_name' => ['nullable', 'string', 'max:150'],
             'artist_name' => ['nullable', 'string', 'max:150'],
             'status' => ['required', 'string'],
@@ -86,10 +119,13 @@ class AdminComicController extends Controller
         ]);
 
         $comic = Comic::findOrFail($id);
+        $coverInput = $request->input('cover_image');
+        $coverImage = $coverInput ? $this->storeImageIfBase64($coverInput, 'comics/covers') : $comic->cover_image;
+
         $comic->update([
             'title' => $request->input('title'),
             'description' => $request->input('description'),
-            'cover_image' => $request->input('cover_image', $comic->cover_image),
+            'cover_image' => $coverImage,
             'author_name' => $request->input('author_name'),
             'artist_name' => $request->input('artist_name'),
             'status' => $request->input('status'),

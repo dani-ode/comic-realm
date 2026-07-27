@@ -38,6 +38,36 @@ it('allows regular user to apply for publisher role and redirects if already app
     $responseApplyAgain->assertRedirect(route('publisher.dashboard'));
 });
 
+test('it decodes base64 cover image and saves stored file path when creating comic', function () {
+    Storage::fake('public');
+
+    $publisher = User::factory()->create(['role' => 'publisher']);
+    PublisherProfile::create([
+        'user_id' => $publisher->id,
+        'brand_name' => 'Test Studio',
+        'slug' => 'test-studio',
+        'verification_status' => 'approved',
+    ]);
+    $genre = Genre::factory()->create();
+
+    $base64Image = 'data:image/webp;base64,UklGRjIAAABXRUJQVlA4ICAAAACyAgCdASoCAAEALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA';
+
+    $response = $this->actingAs($publisher)->post('/publisher/comics', [
+        'title' => 'Base64 Test Comic',
+        'description' => 'Test Base64 Cover Image.',
+        'cover_image' => $base64Image,
+        'status' => 'ongoing',
+        'genres' => [$genre->id],
+    ]);
+
+    $response->assertRedirect(route('publisher.comics.index'));
+    $comic = Comic::where('title', 'Base64 Test Comic')->first();
+
+    expect($comic)->not->toBeNull();
+    expect($comic->cover_image)->not->toBe($base64Image);
+    expect($comic->cover_image)->toContain('/storage/comics/covers/');
+});
+
 it('allows approved publisher to create new comic series and publish chapter with pages', function () {
     Storage::fake('public');
 

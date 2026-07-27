@@ -9,12 +9,46 @@ use App\Domain\Wallet\Models\PublisherWallet;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
 class PublisherComicController extends Controller
 {
+    protected function storeImageIfBase64(?string $imageInput, string $directory = 'comics/covers'): ?string
+    {
+        if (! $imageInput) {
+            return null;
+        }
+
+        if (! str_starts_with($imageInput, 'data:image')) {
+            return $imageInput;
+        }
+
+        preg_match('/data:image\/(.*?);base64,(.*)/s', $imageInput, $matches);
+        if (empty($matches[2])) {
+            return $imageInput;
+        }
+
+        $extension = $matches[1] ?? 'webp';
+        if ($extension === 'jpeg') {
+            $extension = 'jpg';
+        }
+
+        $data = base64_decode($matches[2]);
+        if ($data === false) {
+            return $imageInput;
+        }
+
+        $filename = uniqid('img_') . '_' . time() . '.' . $extension;
+        $path = "{$directory}/{$filename}";
+
+        Storage::disk('public')->put($path, $data);
+
+        return Storage::url($path);
+    }
+
     public function dashboard(Request $request): InertiaResponse|RedirectResponse
     {
         $user = $request->user();
@@ -130,13 +164,16 @@ class PublisherComicController extends Controller
         $title = $request->input('title');
         $slug = Str::slug($title) . '-' . rand(100, 999);
 
+        $coverImage = $this->storeImageIfBase64($request->input('cover_image'), 'comics/covers');
+        $bannerImage = $this->storeImageIfBase64($request->input('banner_image'), 'comics/banners');
+
         $comic = Comic::create([
             'publisher_id' => $user->id,
             'title' => $title,
             'slug' => $slug,
             'description' => $request->input('description'),
-            'cover_image' => $request->input('cover_image'),
-            'banner_image' => $request->input('banner_image'),
+            'cover_image' => $coverImage,
+            'banner_image' => $bannerImage,
             'author_name' => $request->input('author_name'),
             'artist_name' => $request->input('artist_name'),
             'status' => $request->input('status', 'ongoing'),
@@ -183,11 +220,17 @@ class PublisherComicController extends Controller
             'genres' => ['nullable', 'array'],
         ]);
 
+        $coverInput = $request->input('cover_image');
+        $bannerInput = $request->input('banner_image');
+
+        $coverImage = $coverInput ? $this->storeImageIfBase64($coverInput, 'comics/covers') : $comic->cover_image;
+        $bannerImage = $bannerInput ? $this->storeImageIfBase64($bannerInput, 'comics/banners') : $comic->banner_image;
+
         $comic->update([
             'title' => $request->input('title'),
             'description' => $request->input('description'),
-            'cover_image' => $request->input('cover_image', $comic->cover_image),
-            'banner_image' => $request->input('banner_image', $comic->banner_image),
+            'cover_image' => $coverImage,
+            'banner_image' => $bannerImage,
             'author_name' => $request->input('author_name'),
             'artist_name' => $request->input('artist_name'),
             'status' => $request->input('status'),

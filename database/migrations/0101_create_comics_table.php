@@ -15,8 +15,8 @@ return new class extends Migration
             $table->string('slug', 255)->unique();
             $table->string('alternative_title', 255)->nullable();
             $table->text('description');
-            $table->string('cover_image', 500);
-            $table->string('banner_image', 500)->nullable();
+            $table->mediumText('cover_image');
+            $table->mediumText('banner_image')->nullable();
             $table->string('author_name', 150)->nullable();
             $table->string('artist_name', 150)->nullable();
             $table->string('status', 30)->default('ongoing')->index(); // ongoing, completed, hiatus, cancelled
