@@ -1,6 +1,6 @@
 # ComicRealm 📖🚀
 
-**The ComicRealm** adalah platform *Webcomic Marketplace*, *Continuous Vertical Webtoon Reader*, dan *Creator Economy Publishing Platform* yang dibangun menggunakan arsitektur **Domain-Driven Design (DDD)** berbasis **Laravel 13 Monolith + Inertia.js + Vue 3 + TypeScript + Tailwind CSS v4**, terintegrasi dengan **TriPay Payment Gateway**.
+**ComicRealm** adalah platform *Webcomic Marketplace*, *Continuous Vertical Webtoon Reader*, dan *Creator Economy Publishing Platform* yang dibangun menggunakan arsitektur **Domain-Driven Design (DDD)** berbasis **Laravel 13 Monolith + Inertia.js + Vue 3 + TypeScript + Tailwind CSS v4**, terintegrasi dengan **TriPay Payment Gateway**.
 
 🔗 **Live Demo Application**: [https://comic-realm.daniode.com](https://comic-realm.daniode.com)
 
@@ -169,4 +169,4 @@ Aplikasi sekarang dapat diakses di peramban web pada alamat: `http://127.0.0.1:8
 
 ## 📄 Lisensi
 
-Proyek **The ComicRealm** dikembangkan di bawah lisensi [MIT License](LICENSE).
+Proyek **ComicRealm** dikembangkan di bawah lisensi [MIT License](LICENSE).
