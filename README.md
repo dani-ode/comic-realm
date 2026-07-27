@@ -11,8 +11,8 @@
 | Keterangan | Detail |
 | --- | --- |
 | **Nama Lengkap** | La Ode Mahdani |
-| **Email** | [ode.m.dani@gmail.com](mailto:ode.m.dani@gmail.com) |
-| **Nomor HP / WhatsApp** | `08xxxxxxxxxx` *(Dapat diperbarui)* |
+| **Email** | [hi@daniode.com](mailto:hi@daniode.com) |
+| **Nomor HP / WhatsApp** | `085220838947` *(Dapat diperbarui)* |
 | **Website Demo** | [comic-realm.daniode.com](https://comic-realm.daniode.com) |
 
 ---

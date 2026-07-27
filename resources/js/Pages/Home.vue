@@ -8,7 +8,7 @@ defineProps<{
 </script>
 
 <template>
-  <Head title="Home - Read. Create. Publish." />
+  <Head title="ComicRealm - Premium Webcomic Streaming & TriPay Monetization" />
 
   <div class="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 text-center">
     <div class="max-w-2xl">

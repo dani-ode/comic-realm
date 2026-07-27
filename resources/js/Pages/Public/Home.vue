@@ -77,7 +77,7 @@ defineProps<{
 </script>
 
 <template>
-  <Head title="Home - Premium Webcomics & Manga" />
+  <Head title="ComicRealm - Premium Webcomic Streaming & TriPay Monetization" />
 
   <PublicLayout>
     <div class="space-y-12 py-8">
