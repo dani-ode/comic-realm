@@ -18,11 +18,14 @@ interface Channel {
   code: string;
   name: string;
   group: string;
-  fee_merchant: number;
-  fee_customer: number;
-  total_fee: number;
-  active: boolean;
+  fee_flat?: number;
+  fee_percent?: number;
+  fee_merchant?: number;
+  fee_customer?: number;
+  total_fee?: number;
   icon_url?: string;
+  disabled?: boolean;
+  disabled_reason?: string;
 }
 
 interface Order {
@@ -37,8 +40,17 @@ const props = defineProps<{
 }>();
 
 const { error: toastError } = useToast();
-const selectedCode = ref(props.channels?.[0]?.code || '');
+const defaultChannel = props.channels?.find(c => !c.disabled) || props.channels?.[0];
+const selectedCode = ref(defaultChannel?.code || '');
 const isLoading = ref(false);
+
+const selectChannel = (ch: Channel) => {
+  if (ch.disabled) {
+    toastError(ch.disabled_reason || `Metode ${ch.name} memerlukan minimal transaksi Rp 10.000.`);
+    return;
+  }
+  selectedCode.value = ch.code;
+};
 
 const selectedChannel = computed(() => {
   return props.channels.find(c => c.code === selectedCode.value) || null;
@@ -169,14 +181,17 @@ const processPayment = async () => {
           </h3>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <label
+            <div
               v-for="ch in groupList"
               :key="ch.code"
+              @click="selectChannel(ch)"
               class="relative bg-slate-900/90 border rounded-2xl p-4 flex items-center justify-between cursor-pointer transition select-none group"
               :class="[
-                selectedCode === ch.code
-                  ? 'border-sky-500 bg-sky-500/10 shadow-xl shadow-sky-500/10 ring-1 ring-sky-500/50'
-                  : 'border-slate-800/80 hover:border-slate-700/80 hover:bg-slate-800/40'
+                ch.disabled
+                  ? 'opacity-40 cursor-not-allowed bg-slate-950/60 border-slate-800/40'
+                  : (selectedCode === ch.code
+                      ? 'border-sky-500 bg-sky-500/10 shadow-xl shadow-sky-500/10 ring-1 ring-sky-500/50'
+                      : 'border-slate-800/80 hover:border-slate-700/80 hover:bg-slate-800/40')
               ]"
             >
               <div class="flex items-center gap-3.5 min-w-0">
@@ -197,7 +212,10 @@ const processPayment = async () => {
 
                 <div class="min-w-0">
                   <h4 class="font-bold text-white text-xs sm:text-sm truncate group-hover:text-sky-300 transition">{{ ch.name }}</h4>
-                  <span v-if="getChannelPercent(ch) > 0" class="text-[10px] text-amber-400 font-medium block truncate">
+                  <span v-if="ch.disabled" class="text-[10px] text-rose-400 font-bold block truncate">
+                    {{ ch.disabled_reason || 'Minimal Rp 10.000' }}
+                  </span>
+                  <span v-else-if="getChannelPercent(ch) > 0" class="text-[10px] text-amber-400 font-medium block truncate">
                     Fee {{ getChannelPercent(ch) }}% (Persentase)
                   </span>
                   <span v-else class="text-[10px] text-slate-500 block truncate">Biaya Tetap (Flat Fee)</span>
@@ -221,7 +239,7 @@ const processPayment = async () => {
                 v-model="selectedCode"
                 class="sr-only"
               />
-            </label>
+            </div>
           </div>
         </div>
 

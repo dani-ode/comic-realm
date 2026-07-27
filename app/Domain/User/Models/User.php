@@ -59,6 +59,11 @@ class User extends Authenticatable
         return $this->hasOne(\App\Domain\Publisher\Models\PublisherProfile::class, 'user_id');
     }
 
+    public function comics(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Domain\Comic\Models\Comic::class, 'publisher_id');
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === UserRole::ADMIN;

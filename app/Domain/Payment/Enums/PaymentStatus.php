@@ -8,5 +8,6 @@ enum PaymentStatus: string
     case PAID = 'PAID';
     case EXPIRED = 'EXPIRED';
     case FAILED = 'FAILED';
+    case CANCELLED = 'CANCELLED';
     case REFUND = 'REFUND';
 }

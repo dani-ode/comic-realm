@@ -39,9 +39,9 @@ class CreateOrderFromCart
                 ->get();
 
             foreach ($pendingOrders as $pendingOrder) {
-                $pendingOrder->update(['status' => 'cancelled']);
+                $pendingOrder->update(['status' => \App\Domain\Order\Enums\OrderStatus::CANCELLED->value]);
                 if ($pendingOrder->payment) {
-                    $pendingOrder->payment->update(['status' => 'CANCELLED']);
+                    $pendingOrder->payment->update(['status' => \App\Domain\Payment\Enums\PaymentStatus::CANCELLED->value]);
                 }
             }
 

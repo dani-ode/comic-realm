@@ -84,3 +84,34 @@ it('processes webhook callback and grants entitlement', function () {
     expect($payment->fresh()->status->value)->toBe('PAID')
         ->and($order->fresh()->status->value)->toBe('completed');
 });
+
+it('allows user to check transaction status via check-status endpoint', function () {
+    $user = User::factory()->create();
+    $order = Order::create([
+        'user_id' => $user->id,
+        'order_number' => 'INV-CHECK-001',
+        'subtotal' => 10000,
+        'tax_amount' => 0,
+        'fee_amount' => 0,
+        'total_amount' => 10000,
+        'status' => 'pending',
+    ]);
+
+    $payment = Payment::create([
+        'order_id' => $order->id,
+        'user_id' => $user->id,
+        'tripay_reference' => 'DEV-T23062389444G3FIC',
+        'merchant_ref' => 'INV-CHECK-001',
+        'payment_method' => 'QRIS2',
+        'payment_name' => 'QRIS',
+        'amount' => 10000,
+        'status' => 'UNPAID',
+    ]);
+
+    $response = $this->actingAs($user)->post('/api/payment/check-status', [
+        'reference' => 'DEV-T23062389444G3FIC',
+    ]);
+
+    $response->assertStatus(200);
+    $response->assertJson(['success' => true]);
+});

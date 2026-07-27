@@ -169,8 +169,19 @@ const topGenres = computed(() => {
                 </span>
             </Link>
 
-            <!-- Nav Links (Catalog + Top 10 Most Used Genres) -->
+            <!-- Nav Links (Studio List + Catalog + Top 10 Most Used Genres) -->
             <nav class="hidden md:flex items-center gap-3 text-xs font-semibold overflow-x-auto scrollbar-none py-1">
+                <Link
+                    href="/studios"
+                    class="text-slate-300 hover:text-white transition whitespace-nowrap shrink-0 px-2.5 py-1 rounded-lg"
+                    :class="
+                        page.url.startsWith('/studios')
+                            ? 'text-sky-400 font-extrabold bg-sky-500/10 border border-sky-500/20'
+                            : ''
+                    "
+                >
+                    All Studios
+                </Link>
                 <Link
                     href="/comics"
                     class="text-slate-300 hover:text-white transition whitespace-nowrap shrink-0 px-2.5 py-1 rounded-lg"
@@ -389,8 +400,15 @@ const topGenres = computed(() => {
             </div>
         </header>
 
-        <!-- Mobile Nav Bar (Catalog + Top 10 Most Used Genres) -->
+        <!-- Mobile Nav Bar (Studio List + Catalog + Top 10 Most Used Genres) -->
         <nav v-if="!minimal" class="md:hidden bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-3 py-2 flex items-center gap-2 text-xs font-medium overflow-x-auto shrink-0 sticky top-[57px] z-40 scrollbar-none">
+            <Link
+                href="/studios"
+                class="px-3 py-1 rounded-lg transition whitespace-nowrap shrink-0"
+                :class="page.url.startsWith('/studios') ? 'bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20' : 'text-slate-400 hover:text-white'"
+            >
+                All Studios
+            </Link>
             <Link
                 href="/comics"
                 class="px-3 py-1 rounded-lg transition whitespace-nowrap shrink-0"

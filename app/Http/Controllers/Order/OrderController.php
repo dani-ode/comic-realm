@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Order;
 
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Models\Order;
+use App\Domain\Payment\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class OrderController extends Controller
     {
         $orders = Order::with(['items.comic', 'payment'])
             ->where('user_id', $request->user()->id)
-            ->latest()
+            ->orderBy('created_at', 'desc')
             ->paginate(10);
 
         return Inertia::render('Order/Index', [
@@ -26,7 +27,7 @@ class OrderController extends Controller
 
     public function show(string $orderNumber, Request $request): InertiaResponse
     {
-        $order = Order::with(['items.comic', 'items.chapter', 'payment'])
+        $order = Order::with(['items.comic', 'payment'])
             ->where('user_id', $request->user()->id)
             ->where('order_number', $orderNumber)
             ->firstOrFail();
@@ -48,7 +49,7 @@ class OrderController extends Controller
         if (in_array(strtolower($statusStr), ['pending', 'unpaid'])) {
             $order->update(['status' => OrderStatus::CANCELLED->value]);
             if ($order->payment) {
-                $order->payment->update(['status' => 'CANCELLED']);
+                $order->payment->update(['status' => PaymentStatus::CANCELLED->value]);
             }
 
             return redirect()->back()->with('success', 'Pesanan berhasil dibatalkan.');

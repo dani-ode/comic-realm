@@ -15,4 +15,6 @@ interface PaymentGateway
     public function createClosedTransaction(Order $order, string $paymentMethod): Payment;
 
     public function verifyWebhook(Request $request): array;
+
+    public function checkTransactionStatus(string $reference): array;
 }

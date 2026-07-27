@@ -12,7 +12,7 @@ import {
   ClipboardDocumentIcon,
   CheckIcon,
 } from '@heroicons/vue/24/outline';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 interface OrderItem {
   id: number;
@@ -38,6 +38,9 @@ interface Payment {
   pay_code: string;
   status: string;
   checkout_url?: string;
+  amount?: number;
+  total_fee?: number;
+  fee_customer?: number;
 }
 
 interface Order {
@@ -57,6 +60,19 @@ const props = defineProps<{
 }>();
 
 const copied = ref(false);
+
+const paymentFee = computed(() => {
+  if (!props.order.payment) return 0;
+  return props.order.payment.total_fee ?? props.order.payment.fee_customer ?? 0;
+});
+
+const grandTotalWithFee = computed(() => {
+  if (props.order.payment && props.order.payment.amount) {
+    return props.order.payment.amount;
+  }
+  const subtotal = props.order.subtotal || props.order.total_amount || 0;
+  return subtotal + paymentFee.value;
+});
 
 const copyInvoiceNumber = () => {
   navigator.clipboard.writeText(props.order.order_number);
@@ -81,11 +97,11 @@ const formatRupiah = (amount: number) => {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
           <div class="space-y-1">
             <span class="text-xs text-sky-400 font-bold uppercase tracking-wider">Official Invoice</span>
-            <div class="flex items-center gap-2">
-              <h1 class="text-2xl sm:text-3xl font-black text-white font-mono">#{{ order.order_number }}</h1>
+            <div class="flex items-center gap-2 min-w-0">
+              <h1 class="text-base sm:text-3xl font-black text-white font-mono truncate">#{{ order.order_number }}</h1>
               <button
                 @click="copyInvoiceNumber"
-                class="p-1.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition"
+                class="p-1.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition shrink-0"
                 title="Copy Invoice Number"
               >
                 <CheckIcon v-if="copied" class="w-4 h-4 text-emerald-400" />
@@ -172,21 +188,18 @@ const formatRupiah = (amount: number) => {
         </div>
 
         <!-- Order Financial Summary -->
-        <div class="pt-4 border-t border-slate-800/80 space-y-3 text-xs sm:text-sm">
+        <div class="pt-4 border-t border-slate-800/80 space-y-2.5 text-xs sm:text-sm">
           <div class="flex justify-between text-slate-400">
-            <span>Subtotal ({{ order.items.length }} items)</span>
-            <span class="text-white">{{ formatRupiah(order.subtotal || order.total_amount) }}</span>
+            <span>Subtotal Chapter ({{ order.items.length }} items)</span>
+            <span class="text-white font-medium">{{ formatRupiah(order.subtotal || order.total_amount) }}</span>
           </div>
-          <div class="flex justify-between text-slate-400">
-            <span class="flex items-center gap-1">
-              <ShieldCheckIcon class="w-4 h-4 text-emerald-400" />
-              Gateway Payment Processing
-            </span>
-            <span class="text-emerald-400 font-medium">Included</span>
+          <div v-if="paymentFee > 0" class="flex justify-between text-slate-400">
+            <span>Biaya Layanan (TriPay Admin Fee)</span>
+            <span class="text-white font-medium">+{{ formatRupiah(paymentFee) }}</span>
           </div>
           <div class="pt-3 border-t border-slate-800 flex justify-between text-base font-extrabold">
-            <span class="text-white">Total Amount</span>
-            <span class="text-amber-400 text-lg sm:text-xl">{{ formatRupiah(order.total_amount) }}</span>
+            <span class="text-white">Total Bayar (Yang Harus Ditransfer)</span>
+            <span class="text-amber-400 text-lg sm:text-xl">{{ formatRupiah(grandTotalWithFee) }}</span>
           </div>
         </div>
 

@@ -12,5 +12,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/payment/select/{orderNumber}', [PaymentChannelController::class, 'select'])->name('payment.select');
     Route::get('/api/payment/channels', [PaymentChannelController::class, 'getChannels'])->name('payment.channels');
     Route::post('/api/payment/process', [PaymentTransactionController::class, 'store'])->name('payment.process');
+    Route::post('/api/payment/check-status', [PaymentTransactionController::class, 'checkStatus'])->name('payment.check-status');
     Route::get('/payment/detail/{reference}', [PaymentTransactionController::class, 'show'])->name('payment.show');
 });

@@ -40,3 +40,9 @@ it('renders public studio profile page', function () {
 
     $response->assertStatus(200);
 });
+
+it('renders studio list page with card grid', function () {
+    $response = $this->get('/studios');
+
+    $response->assertStatus(200);
+});

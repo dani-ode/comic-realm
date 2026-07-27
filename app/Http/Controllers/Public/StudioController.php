@@ -3,13 +3,44 @@
 namespace App\Http\Controllers\Public;
 
 use App\Domain\Comic\Models\Comic;
+use App\Domain\Publisher\Enums\PublisherStatus;
 use App\Domain\User\Models\User;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
 class StudioController extends Controller
 {
+    public function index(Request $request): InertiaResponse
+    {
+        $search = trim((string) $request->input('search'));
+
+        $studios = User::query()
+            ->where('role', 'publisher')
+            ->whereHas('publisherProfile')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->whereHas('publisherProfile', function ($q) use ($search) {
+                    $q->where('brand_name', 'like', "%{$search}%")
+                      ->orWhere('bio', 'like', "%{$search}%");
+                })->orWhere('name', 'like', "%{$search}%");
+            })
+            ->with(['publisherProfile'])
+            ->withCount(['comics as published_comics_count' => function ($q) {
+                $q->where('publication_status', 'published');
+            }])
+            ->latest('id')
+            ->paginate(12)
+            ->withQueryString();
+
+        return Inertia::render('Public/Studios/Index', [
+            'studios' => $studios,
+            'filters' => [
+                'search' => $search,
+            ],
+        ]);
+    }
+
     public function show(string $idOrSlug): InertiaResponse
     {
         $publisher = User::query()
